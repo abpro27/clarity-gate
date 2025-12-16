@@ -16,6 +16,18 @@ Clarity Gate is a verification skill that checks if a document will cause anothe
 
 ---
 
+## Critical Limitation (v1.1)
+
+> **Clarity Gate verifies FORM, not TRUTH.**
+
+This skill checks whether claims are properly marked as uncertain—it cannot verify if claims are actually true.
+
+**Risk:** An LLM can hallucinate facts INTO a document, then "pass" Clarity Gate by adding source markers to false claims.
+
+**Solution:** Point 7 (HITL Fact Verification) is now **MANDATORY** before declaring PASS.
+
+---
+
 ## The Core Insight
 
 LLMs don't hallucinate randomly. They hallucinate **from your documents** when those documents contain unmarked assumptions.
@@ -36,7 +48,7 @@ LLMs don't hallucinate randomly. They hallucinate **from your documents** when t
 
 1. Copy `SKILL.md` to your Claude Desktop skills folder
 2. Ask Claude: *"Run clarity gate on this document"*
-3. Get a report of issues + fixes
+3. Get a report of issues + fixes + HITL verification request
 
 ### Option 2: Manual Checklist
 
@@ -49,6 +61,9 @@ Run through your document looking for:
 | "Achieves", "delivers", "provides" | Change to "designed to", "intended to" |
 | ✅ checkmarks | Verify these are actually confirmed |
 | "100%" anything | Almost always needs qualification |
+| **Case studies / customer names** | **⚠️ HITL REQUIRED** |
+| **Production deployments** | **⚠️ HITL REQUIRED** |
+| **Measured outcomes** | **⚠️ HITL REQUIRED** |
 
 ---
 
@@ -104,7 +119,7 @@ CC BY 4.0 — Use freely, attribution appreciated.
 
 ---
 
-## The 6-Point Verification
+## The 7-Point Verification
 
 ### 1. DATA CONSISTENCY
 Scan for conflicting numbers, dates, or facts within the document.
@@ -178,6 +193,30 @@ Sections that should have caveats but don't.
 
 ---
 
+### 7. HITL FACT VERIFICATION ⚠️ MANDATORY
+
+**Why this exists:** Points 1-6 verify that claims are MARKED correctly. They cannot verify if claims are TRUE.
+
+**Check:** Extract ALL major factual claims and present them to the human for verification.
+
+**Process:**
+
+1. **Extract claims** - List every significant factual assertion
+2. **Present to human** in table format with "Source in Doc" column
+3. **Wait for human response** - Do NOT proceed until human confirms
+4. **Apply corrections** - Fix any claims the human identifies as false
+
+**Red flags that REQUIRE HITL:**
+- Case studies or customer examples
+- Deployment/production claims
+- User counts or adoption metrics
+- Revenue or cost figures
+- "Zero defects" or "100%" claims
+- Partnership or client names
+- Before/after comparisons
+
+---
+
 ## Quick Scan Checklist
 
 Run through document looking for these patterns:
@@ -192,6 +231,9 @@ Run through document looking for these patterns:
 | Time/cost savings claims | Mark as projected unless measured |
 | "The model recognizes/understands/knows" | Mark as hypothesis about LLM behavior |
 | "Always", "never", "guarantees" | Check if absolute claim is warranted |
+| **Case studies / customer names** | **⚠️ HITL REQUIRED - verify with human** |
+| **Production deployments** | **⚠️ HITL REQUIRED - verify with human** |
+| **Measured outcomes** | **⚠️ HITL REQUIRED - verify with human** |
 
 ---
 
@@ -210,10 +252,27 @@ After running Clarity Gate, report:
 ### Warning (could cause equivocation)  
 - [issue + location + fix]
 
-### Passed
+### Passed (Points 1-6)
 - [what was already clear]
 
-**Verdict:** PASS / NEEDS FIXES / FAIL
+---
+
+## ⚠️ HITL Verification Required (Point 7)
+
+Before declaring PASS, please confirm these claims are TRUE:
+
+| # | Claim | Source in Doc | Human Confirms |
+|---|-------|---------------|----------------|
+| 1 | [claim] | [location] | ⬜ True / ⬜ False |
+| 2 | [claim] | [location] | ⬜ True / ⬜ False |
+
+**Verdict:** PENDING HITL CONFIRMATION
+```
+
+**Only after human confirms can you update to:**
+
+```
+**Verdict:** PASS (HITL confirmed [date])
 ```
 
 ---
@@ -224,7 +283,8 @@ After running Clarity Gate, report:
 |-------|------------|--------|
 | **CRITICAL** | LLM will likely treat hypothesis as fact | Must fix before use |
 | **WARNING** | LLM might misinterpret | Should fix |
-| **PASS** | Clearly marked, no ambiguity | No action needed |
+| **HITL REQUIRED** | Factual claim needs human verification | Cannot pass without confirmation |
+| **PASS** | Clearly marked, no ambiguity, HITL confirmed | No action needed |
 
 ---
 
@@ -249,6 +309,43 @@ After running Clarity Gate, report:
 **Before:** "Users prefer the new interface"
 **After:** "HYPOTHESIS: Users may prefer the new interface (based on 3 informal interviews, no formal study)"
 
+**Before:** "Deployed to 500+ employees at Acme Corp with zero data leaks"
+**After (if HITL reveals this was only a demo):** "Demo presented to Acme Corp. NO production deployment. Zero data leaks is a design goal, not a measured outcome."
+
+---
+
+## HITL Failure Case Study
+
+**What happened:**
+
+1. LLM wrote document about a project
+2. Included "Enterprise deployment: 500+ employees, zero PII leaks, 6 months production"
+3. Ran Clarity Gate points 1-6
+4. Added "(client-reported)" marker to claims
+5. Declared PASS
+
+**The problem:**
+- The client only saw a demo—there was NO production deployment
+- The LLM misinterpreted past conversations
+- Adding "(client-reported)" made a FALSE claim look MORE credible
+- Clarity Gate verified the FORM but not the TRUTH
+
+**What HITL would have caught:**
+
+```
+## HITL Verification Required
+
+| # | Claim | Source in Doc | Human Confirms |
+|---|-------|---------------|----------------|
+| 1 | Deployed to 500+ employees | Case Study | ⬜ True / ⬜ False |
+| 2 | Zero PII leaks in 6 months production | Case Study | ⬜ True / ⬜ False |
+| 3 | 80% adoption rate achieved | Metrics | ⬜ True / ⬜ False |
+
+Human response: "FALSE - Client only saw a demo. None of this happened."
+```
+
+**Lesson:** Without HITL, Clarity Gate can make false claims WORSE by adding authoritative-looking source markers.
+
 ---
 
 ## What This Skill Does NOT Do
@@ -257,11 +354,29 @@ After running Clarity Gate, report:
 - ❌ Restructure documents 
 - ❌ Add deep links or references
 - ❌ Evaluate writing quality
-- ❌ Check factual accuracy (only checks if uncertainty is marked)
+- ❌ **Check factual accuracy autonomously** (requires HITL for factual claims)
 
-**This skill only verifies:** Can another LLM read this without mistaking assumptions for facts?
+**This skill verifies:** 
+1. (Points 1-6) Can another LLM read this without mistaking assumptions for facts?
+2. (Point 7) Has a human confirmed the factual claims are actually true?
 
 ---
 
-**Version:** 1.0  
+## Changelog
+
+### v1.1 (December 2025)
+- **ADDED:** Point 7 - HITL Fact Verification (MANDATORY)
+- **ADDED:** Critical Limitation section explaining FORM vs TRUTH
+- **ADDED:** HITL Failure Case Study
+- **ADDED:** "Source in Doc" column to HITL table for easier verification
+- **UPDATED:** Output format to require HITL confirmation before PASS
+- **UPDATED:** Quick Scan Checklist with HITL-required patterns
+- **UPDATED:** Severity levels to include "HITL REQUIRED"
+
+### v1.0 (November 2025)
+- Initial release with 6-point verification
+
+---
+
+**Version:** 1.1  
 **Last Updated:** December 2025

@@ -3,7 +3,7 @@ name: clarity-gate
 description: Document verification to prevent LLM hallucination and equivocation. Use when reviewing documents that will be read by other LLMs, checking if claims could be misinterpreted as facts, or validating that hypotheses are clearly marked. Triggers on "clarity gate", "check for hallucination risks", "can an LLM read this safely", "review for equivocation", "verify document clarity".
 ---
 
-# Clarity Gate v1.0
+# Clarity Gate v1.1
 
 **Purpose:** Verify a document won't cause another LLM to hallucinate or equivocate when reading it.
 
@@ -12,6 +12,18 @@ description: Document verification to prevent LLM hallucination and equivocation
 **Core Principle:** *"Unverified claim? Mark it as uncertain. Marked uncertainty won't be hallucinated as fact."*
 
 **Origin:** Extracted from Stream Coding v3.3 methodology by Francesco Marinoni Moretto. Stream Coding uses Clarity Gate as a mandatory checkpoint before code generation. This standalone version enables the verification pass without the full methodology.
+
+---
+
+## Critical Limitation (v1.1 Addition)
+
+> **Clarity Gate verifies FORM, not TRUTH.**
+>
+> This skill checks whether claims are properly marked as uncertain—it cannot verify if claims are actually true. 
+>
+> **Risk:** An LLM can hallucinate facts INTO a document (from misremembered conversations, incorrect assumptions, or pattern-matching errors), then "pass" Clarity Gate by adding source markers to false claims.
+>
+> **Solution:** The HITL (Human-In-The-Loop) verification step (Point 7) is now **MANDATORY** before declaring PASS.
 
 ---
 
@@ -25,7 +37,7 @@ description: Document verification to prevent LLM hallucination and equivocation
 
 ---
 
-## The 6-Point Verification
+## The 7-Point Verification
 
 ### 1. DATA CONSISTENCY
 Scan for conflicting numbers, dates, or facts within the document.
@@ -93,6 +105,59 @@ Sections that should have caveats but don't.
 
 ---
 
+### 7. HITL FACT VERIFICATION ⚠️ MANDATORY
+
+**Why this exists:** Points 1-6 verify that claims are MARKED correctly. They cannot verify if claims are TRUE. An LLM may confidently write false information derived from:
+- Misremembered conversations
+- Incorrect pattern-matching from context
+- Confusing proposals/plans with completed work
+- Assuming demo = deployment, or planned = achieved
+
+**Check:** Extract ALL major factual claims and present them to the human for verification.
+
+**Process:**
+
+1. **Extract claims** - List every significant factual assertion:
+   - Metrics (users, revenue, percentages)
+   - Events (deployments, launches, partnerships)
+   - Outcomes (results, achievements, validations)
+   - Comparisons (X is better than Y, X achieved Z)
+
+2. **Present to human** in this format:
+   ```
+   ## HITL Verification Required
+   
+   Before I can declare PASS, please confirm these claims are TRUE:
+   
+   | # | Claim | Source in Doc | Human Confirms |
+   |---|-------|---------------|----------------|
+   | 1 | [specific claim] | [section/line] | ⬜ True / ⬜ False |
+   | 2 | [specific claim] | [section/line] | ⬜ True / ⬜ False |
+   | 3 | [specific claim] | [section/line] | ⬜ True / ⬜ False |
+   
+   Please respond with corrections for any false claims.
+   ```
+
+3. **Wait for human response** - Do NOT proceed until human confirms
+
+4. **Apply corrections** - Fix any claims the human identifies as false
+
+**Red flags that REQUIRE HITL:**
+- Case studies or customer examples
+- Deployment/production claims
+- User counts or adoption metrics
+- Revenue or cost figures
+- "Zero defects" or "100%" claims
+- Partnership or client names
+- Before/after comparisons
+
+**Fix:** If human identifies false claims, either:
+- Remove the claim entirely
+- Reframe as "proposed", "planned", "hypothesized"
+- Add explicit "NOT VALIDATED" warning
+
+---
+
 ## Quick Scan Checklist
 
 Run through document looking for these patterns:
@@ -107,6 +172,9 @@ Run through document looking for these patterns:
 | Time/cost savings claims | Mark as projected unless measured |
 | "The model recognizes/understands/knows" | Mark as hypothesis about LLM behavior |
 | "Always", "never", "guarantees" | Check if absolute claim is warranted |
+| **Case studies / customer names** | **⚠️ HITL REQUIRED - verify with human** |
+| **Production deployments** | **⚠️ HITL REQUIRED - verify with human** |
+| **Measured outcomes** | **⚠️ HITL REQUIRED - verify with human** |
 
 ---
 
@@ -125,10 +193,27 @@ After running Clarity Gate, report:
 ### Warning (could cause equivocation)  
 - [issue + location + fix]
 
-### Passed
+### Passed (Points 1-6)
 - [what was already clear]
 
-**Verdict:** PASS / NEEDS FIXES / FAIL
+---
+
+## ⚠️ HITL Verification Required (Point 7)
+
+Before declaring PASS, please confirm these claims are TRUE:
+
+| # | Claim | Source in Doc | Human Confirms |
+|---|-------|---------------|----------------|
+| 1 | [claim] | [location] | ⬜ True / ⬜ False |
+| 2 | [claim] | [location] | ⬜ True / ⬜ False |
+
+**Verdict:** PENDING HITL CONFIRMATION
+```
+
+**Only after human confirms can you update to:**
+
+```
+**Verdict:** PASS (HITL confirmed [date])
 ```
 
 ---
@@ -139,7 +224,8 @@ After running Clarity Gate, report:
 |-------|------------|--------|
 | **CRITICAL** | LLM will likely treat hypothesis as fact | Must fix before use |
 | **WARNING** | LLM might misinterpret | Should fix |
-| **PASS** | Clearly marked, no ambiguity | No action needed |
+| **HITL REQUIRED** | Factual claim needs human verification | Cannot pass without confirmation |
+| **PASS** | Clearly marked, no ambiguity, HITL confirmed | No action needed |
 
 ---
 
@@ -149,9 +235,11 @@ After running Clarity Gate, report:
 - ❌ Restructure documents 
 - ❌ Add deep links or references
 - ❌ Evaluate writing quality
-- ❌ Check factual accuracy (only checks if uncertainty is marked)
+- ❌ **Check factual accuracy autonomously** (requires HITL for factual claims)
 
-**This skill only verifies:** Can another LLM read this without mistaking assumptions for facts?
+**This skill verifies:** 
+1. (Points 1-6) Can another LLM read this without mistaking assumptions for facts?
+2. (Point 7) Has a human confirmed the factual claims are actually true?
 
 ---
 
@@ -176,6 +264,43 @@ After running Clarity Gate, report:
 **Before:** "Users prefer the new interface"
 **After:** "HYPOTHESIS: Users may prefer the new interface (based on 3 informal interviews, no formal study)"
 
+**Before:** "Deployed to 500+ employees at Acme Corp with zero data leaks"
+**After (if HITL reveals this was only a demo):** "Demo presented to Acme Corp. NO production deployment. Zero data leaks is a design goal, not a measured outcome."
+
+---
+
+## HITL Failure Case Study
+
+**What happened:**
+
+1. LLM wrote document about a project
+2. Included "Enterprise deployment: 500+ employees, zero PII leaks, 6 months production"
+3. Ran Clarity Gate points 1-6
+4. Added "(client-reported)" marker to claims
+5. Declared PASS
+
+**The problem:**
+- The client only saw a demo—there was NO production deployment
+- The LLM misinterpreted past conversations
+- Adding "(client-reported)" made a FALSE claim look MORE credible
+- Clarity Gate verified the FORM but not the TRUTH
+
+**What HITL would have caught:**
+
+```
+## HITL Verification Required
+
+| # | Claim | Source in Doc | Human Confirms |
+|---|-------|---------------|----------------|
+| 1 | Deployed to 500+ employees | Case Study | ⬜ True / ⬜ False |
+| 2 | Zero PII leaks in 6 months production | Case Study | ⬜ True / ⬜ False |
+| 3 | 80% adoption rate achieved | Metrics | ⬜ True / ⬜ False |
+
+Human response: "FALSE - Client only saw a demo. None of this happened."
+```
+
+**Lesson:** Without HITL, Clarity Gate can make false claims WORSE by adding authoritative-looking source markers.
+
 ---
 
 ## Related
@@ -185,7 +310,23 @@ After running Clarity Gate, report:
 
 ---
 
-**Version:** 1.0
+## Changelog
+
+### v1.1 (December 2025)
+- **ADDED:** Point 7 - HITL Fact Verification (MANDATORY)
+- **ADDED:** Critical Limitation section explaining FORM vs TRUTH
+- **ADDED:** HITL Failure Case Study
+- **ADDED:** "Source in Doc" column to HITL table for easier verification
+- **UPDATED:** Output format to require HITL confirmation before PASS
+- **UPDATED:** Quick Scan Checklist with HITL-required patterns
+- **UPDATED:** Severity levels to include "HITL REQUIRED"
+
+### v1.0 (November 2025)
+- Initial release with 6-point verification
+
+---
+
+**Version:** 1.1
 **Scope:** Any document that will be read by LLMs
-**Time:** 5-15 minutes depending on document length
-**Output:** List of issues + fixes, or PASS verdict
+**Time:** 5-15 minutes (verification) + HITL response time (varies)
+**Output:** List of issues + fixes + HITL confirmation, then PASS verdict
