@@ -1,5 +1,7 @@
 # Clarity Gate
 
+> Part of [Stream Coding](https://github.com/frmoretto/stream-coding) — documentation-first methodology for AI-accelerated development.
+
 **Pre-verification for LLM-safe documents.**
 
 > *"Unverified claim? Mark it as uncertain. Marked uncertainty won't be hallucinated as fact."*
