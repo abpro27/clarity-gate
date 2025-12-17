@@ -3,7 +3,7 @@ name: clarity-gate
 description: Document verification to prevent LLM hallucination and equivocation. Use when reviewing documents that will be read by other LLMs, checking if claims could be misinterpreted as facts, or validating that hypotheses are clearly marked. Triggers on "clarity gate", "check for hallucination risks", "can an LLM read this safely", "review for equivocation", "verify document clarity".
 ---
 
-# Clarity Gate v1.1
+# Clarity Gate v1.2
 
 **Purpose:** Verify a document won't cause another LLM to hallucinate or equivocate when reading it.
 
@@ -15,7 +15,7 @@ description: Document verification to prevent LLM hallucination and equivocation
 
 ---
 
-## Critical Limitation (v1.1 Addition)
+## Critical Limitation
 
 > **Clarity Gate verifies FORM, not TRUTH.**
 >
@@ -107,6 +107,18 @@ Sections that should have caveats but don't.
 
 ### 7. HITL FACT VERIFICATION ⚠️ MANDATORY
 
+**Step 0: Request Source of Truth**
+
+Before extracting claims, ask:
+
+> "Do you have a Source of Truth document for this project?
+> (e.g., project state record, verified metrics, status tracker)
+>
+> If yes, please share it — I'll use it to verify claims.
+> If no, I'll present claims for manual verification."
+
+---
+
 **Why this exists:** Points 1-6 verify that claims are MARKED correctly. They cannot verify if claims are TRUE. An LLM may confidently write false information derived from:
 - Misremembered conversations
 - Incorrect pattern-matching from context
@@ -155,6 +167,61 @@ Sections that should have caveats but don't.
 - Remove the claim entirely
 - Reframe as "proposed", "planned", "hypothesized"
 - Add explicit "NOT VALIDATED" warning
+
+---
+
+**Source of Truth Template (Adaptable)**
+
+If the human doesn't have a Source of Truth, suggest creating one:
+
+```
+# [Subject] - Source of Truth
+Last Updated: [date]
+Owner: [name/team]
+Status: [current state]
+
+## Verified Data
+| Item | Value | Context | Verified Date |
+|------|-------|---------|---------------|
+| [what] | [measured value] | [conditions, source, method] | [when] |
+
+## Status Tracker
+| Item | Status | Notes |
+|------|--------|-------|
+| [what] | [None / Planned / In Progress / Completed / N/A] | [details] |
+
+## Stakeholders / Relationships
+| Entity | Relationship | Status |
+|--------|--------------|--------|
+| [who] | [type] | [current state] |
+
+## Sources
+| Claim | Source Type | Reference |
+|-------|-------------|-----------|
+| [claim] | Internal | [internal doc] |
+| [claim] | External | [citation] |
+| [claim] | None | ⚠️ Unverified |
+
+## Open Items
+| ID | Priority | Description | Status |
+|----|----------|-------------|--------|
+```
+
+**Key principles:**
+- Explicit status markers: None, Planned, In Progress, Completed, Verified, N/A
+- Context for every value: How/where/when was it measured?
+- Date everything
+- Separate Internal from External sources
+
+---
+
+**Source Types:**
+
+| Type | Definition | Example |
+|------|------------|--------|
+| **Internal** | Verified state of this project/context | Metrics, status records, team data |
+| **External** | Published research, third-party data | Academic papers, industry reports, official statistics |
+| **None** | Claim without supporting source | ⚠️ Requires HITL verification |
 
 ---
 
@@ -312,6 +379,12 @@ Human response: "FALSE - Client only saw a demo. None of this happened."
 
 ## Changelog
 
+### v1.2 (December 2025)
+- **ADDED:** Step 0 in Point 7 - Request Source of Truth before HITL
+- **ADDED:** Source of Truth Template (adaptable to any domain)
+- **ADDED:** Source Types table (Internal, External, None)
+- **ADDED:** Key principles for Source of Truth documents
+
 ### v1.1 (December 2025)
 - **ADDED:** Point 7 - HITL Fact Verification (MANDATORY)
 - **ADDED:** Critical Limitation section explaining FORM vs TRUTH
@@ -326,7 +399,7 @@ Human response: "FALSE - Client only saw a demo. None of this happened."
 
 ---
 
-**Version:** 1.1
+**Version:** 1.2
 **Scope:** Any document that will be read by LLMs
 **Time:** 5-15 minutes (verification) + HITL response time (varies)
 **Output:** List of issues + fixes + HITL confirmation, then PASS verdict

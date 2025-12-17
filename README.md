@@ -16,7 +16,7 @@ Clarity Gate is a verification skill that checks if a document will cause anothe
 
 ---
 
-## Critical Limitation (v1.1)
+## Critical Limitation
 
 > **Clarity Gate verifies FORM, not TRUTH.**
 
@@ -371,6 +371,11 @@ Human response: "FALSE - Client only saw a demo. None of this happened."
 
 ## Changelog
 
+### v1.2 (December 2025)
+- **ADDED:** Step 0 in Point 7 - Request Source of Truth before HITL
+- **ADDED:** Source of Truth Template (adaptable to any domain)
+- **ADDED:** Source Types table (Internal, External, None)
+
 ### v1.1 (December 2025)
 - **ADDED:** Point 7 - HITL Fact Verification (MANDATORY)
 - **ADDED:** Critical Limitation section explaining FORM vs TRUTH
@@ -385,5 +390,5 @@ Human response: "FALSE - Client only saw a demo. None of this happened."
 
 ---
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Last Updated:** December 2025
