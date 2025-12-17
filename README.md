@@ -47,7 +47,7 @@ LLMs don't hallucinate randomly. They hallucinate **from your documents** when t
 ### Option 1: claude.ai / Claude Desktop
 
 1. Download `clarity-gate.zip` from this repo
-2. Go to Settings → Skills → Upload skill
+2. Go to Settings → Capabilities → Skill → Add
 3. Upload the zip file
 4. Ask Claude: *"Run clarity gate on this document"*
 
