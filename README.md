@@ -44,15 +44,22 @@ LLMs don't hallucinate randomly. They hallucinate **from your documents** when t
 
 ## Quick Start
 
-### Option 1: Use as Claude Skill
+### Option 1: claude.ai / Claude Desktop
 
-1. Copy `SKILL.md` to your Claude Desktop skills folder
-2. Ask Claude: *"Run clarity gate on this document"*
-3. Get a report of issues + fixes + HITL verification request
+1. Download `clarity-gate.zip` from this repo
+2. Go to Settings → Skills → Upload skill
+3. Upload the zip file
+4. Ask Claude: *"Run clarity gate on this document"*
 
-### Option 2: Manual Checklist
+### Option 2: Claude Code
 
-Run through your document looking for:
+1. Copy `SKILL.md` to your project's skills folder
+2. Claude Code will automatically detect and use it
+3. Ask Claude: *"Run clarity gate on this document"*
+
+### Option 3: Manual Checklist
+
+For other LLMs or manual verification, run through your document looking for:
 
 | Pattern | Action |
 |---------|--------|
