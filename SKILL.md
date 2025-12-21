@@ -1,17 +1,32 @@
 ---
 name: clarity-gate
-description: Document verification to prevent LLM hallucination and equivocation. Use when reviewing documents that will be read by other LLMs, checking if claims could be misinterpreted as facts, or validating that hypotheses are clearly marked. Triggers on "clarity gate", "check for hallucination risks", "can an LLM read this safely", "review for equivocation", "verify document clarity".
+description: Pre-ingestion verification for epistemic quality in RAG systems. Use when reviewing documents before they enter knowledge bases, checking if claims could be misinterpreted as facts, or validating that hypotheses are clearly marked. Triggers on "clarity gate", "check for hallucination risks", "can an LLM read this safely", "review for equivocation", "verify document clarity", "pre-ingestion check".
 ---
 
-# Clarity Gate v1.2
+# Clarity Gate v1.3
 
-**Purpose:** Verify a document won't cause another LLM to hallucinate or equivocate when reading it.
+**Purpose:** Pre-ingestion verification system that enforces epistemic quality before documents enter RAG knowledge bases.
 
 **Core Question:** "If another LLM reads this document, will it mistake assumptions for facts?"
 
-**Core Principle:** *"Unverified claim? Mark it as uncertain. Marked uncertainty won't be hallucinated as fact."*
+**Core Principle:** *"Detection finds what is; enforcement ensures what should be. In practice: find the missing uncertainty markers before they become confident hallucinations."*
 
-**Origin:** Extracted from Stream Coding v3.3 methodology by Francesco Marinoni Moretto. Stream Coding uses Clarity Gate as a mandatory checkpoint before code generation. This standalone version enables the verification pass without the full methodology.
+**Prior Art:** This skill builds on proven patterns from enterprise gates (Adlib, pharma QMS) and detection tools (UnScientify, HedgeHog). Our contribution is open-source epistemic enforcement. See [docs/PRIOR_ART.md](docs/PRIOR_ART.md).
+
+**Origin:** Part of [Stream Coding](https://github.com/frmoretto/stream-coding) methodology. Clarity Gate is the mandatory checkpoint before code generation. This standalone version enables verification without the full methodology.
+
+---
+
+## The Key Distinction
+
+Existing tools like UnScientify and HedgeHog **detect** uncertainty markers already present in text ("Is uncertainty expressed?").
+
+Clarity Gate **enforces** their presence where epistemically required ("Should uncertainty be expressed but isn't?").
+
+| Tool Type | Question | Example |
+|-----------|----------|---------|
+| **Detection** | "Does this text contain hedges?" | UnScientify finds "may", "possibly" |
+| **Enforcement** | "Should this claim be hedged but isn't?" | Clarity Gate flags "Revenue will be $50M" |
 
 ---
 
@@ -19,16 +34,17 @@ description: Document verification to prevent LLM hallucination and equivocation
 
 > **Clarity Gate verifies FORM, not TRUTH.**
 >
-> This skill checks whether claims are properly marked as uncertain—it cannot verify if claims are actually true. 
+> This skill checks whether claims are properly marked as uncertain--it cannot verify if claims are actually true. 
 >
-> **Risk:** An LLM can hallucinate facts INTO a document (from misremembered conversations, incorrect assumptions, or pattern-matching errors), then "pass" Clarity Gate by adding source markers to false claims.
+> **Risk:** An LLM can hallucinate facts INTO a document, then "pass" Clarity Gate by adding source markers to false claims.
 >
-> **Solution:** The HITL (Human-In-The-Loop) verification step (Point 7) is now **MANDATORY** before declaring PASS.
+> **Solution:** HITL (Human-In-The-Loop) verification is **MANDATORY** before declaring PASS.
 
 ---
 
 ## When to Use
 
+- Before ingesting documents into RAG systems
 - Before sharing documents with other AI systems
 - After writing specifications, state docs, or methodology descriptions
 - When a document contains projections, estimates, or hypotheses
@@ -37,75 +53,154 @@ description: Document verification to prevent LLM hallucination and equivocation
 
 ---
 
-## The 7-Point Verification
+## The 7 Verification Points
 
-### 1. DATA CONSISTENCY
-Scan for conflicting numbers, dates, or facts within the document.
+### Epistemic Checks (Core Focus: Points 1-4)
 
-**Check:** Does the same metric appear with different values?
-**Red flag:** "500 users" in one section, "750 users" in another
-
-**Fix:** Reconcile conflicts or explicitly note the discrepancy with explanation.
-
----
-
-### 2. HYPOTHESIS vs FACT LABELING
-Every claim must be clearly marked as either validated or hypothetical.
+**1. HYPOTHESIS vs FACT LABELING**
+Every claim must be clearly marked as validated or hypothetical.
 
 **Check:** Are projections, estimates, and assumptions explicitly labeled?
-**Red flag:** "This achieves 40% improvement" (stated as fact, but untested)
+
+| Fails | Passes |
+|-------|--------|
+| "Our architecture outperforms competitors" | "Our architecture outperforms competitors [benchmark data in Table 3]" |
+| "The model achieves 40% improvement" | "The model achieves 40% improvement [measured on dataset X]" |
 
 **Fix:** Add markers: "PROJECTED:", "HYPOTHESIS:", "UNTESTED:", "(estimated)", "~", "?"
 
 ---
 
-### 3. AUTHORITATIVE-LOOKING UNVALIDATED DATA
-Tables with specific percentages and ✅/❌ symbols look like measured data.
+**2. UNCERTAINTY MARKER ENFORCEMENT**
+Forward-looking statements require qualifiers.
+
+**Check:** Do predictions and projections have explicit uncertainty markers?
+
+| Fails | Passes |
+|-------|--------|
+| "Revenue will be $50M by Q4" | "Revenue is **projected** to be $50M by Q4" |
+| "The feature will reduce churn" | "The feature is **expected** to reduce churn" |
+
+**Fix:** Add "projected", "estimated", "expected", "designed to", "intended to"
+
+---
+
+**3. ASSUMPTION VISIBILITY**
+Implicit assumptions that affect interpretation must be explicit.
+
+**Check:** Are hidden conditions and constraints stated?
+
+| Fails | Passes |
+|-------|--------|
+| "The system scales linearly" | "The system scales linearly [assuming <1000 concurrent users]" |
+| "Response time is 50ms" | "Response time is 50ms [under standard load conditions]" |
+
+**Fix:** Add bracketed conditions: "[assuming X]", "[under conditions Y]", "[when Z]"
+
+---
+
+**4. AUTHORITATIVE-LOOKING UNVALIDATED DATA**
+Tables with specific percentages and checkmarks look like measured data.
 
 **Check:** Could a reader mistake this table/chart for empirical results?
+
 **Red flag:** 
 | Approach | Accuracy | Success Rate |
 |----------|----------|--------------|
 | Method A | 89% | 66% |
 | Method B | 95% | 100% |
 
-**Fix:** Add "(guess)", "(est.)", "?" to numbers. Change ✅ to ❓ for unvalidated items. Add explicit warning above table.
+**Fix:** Add "(guess)", "(est.)", "?" to numbers. Change checkmarks to question marks for unvalidated items. Add explicit warning: "PROJECTED VALUES - NOT MEASURED"
 
 ---
 
-### 4. IMPLICIT CAUSATION
+### Data Quality Checks (Complementary: Points 5-7)
+
+**5. DATA CONSISTENCY**
+Scan for conflicting numbers, dates, or facts within the document.
+
+**Check:** Does the same metric appear with different values?
+
+**Red flag:** "500 users" in one section, "750 users" in another
+
+**Fix:** Reconcile conflicts or explicitly note the discrepancy with explanation.
+
+---
+
+**6. IMPLICIT CAUSATION**
 Claims that imply causation without evidence.
 
 **Check:** Does the document claim X causes Y without validation?
+
 **Red flag:** "Shorter prompts improve response quality" (plausible but unproven)
 
 **Fix:** Reframe as hypothesis: "Shorter prompts MAY improve response quality (hypothesis, not validated)"
 
 ---
 
-### 5. FUTURE STATE AS PRESENT
+**7. FUTURE STATE AS PRESENT**
 Describing planned/hoped outcomes as if already achieved.
 
 **Check:** Are future goals written in present tense?
+
 **Red flag:** "The system processes 10,000 requests per second" (when it hasn't been built)
 
 **Fix:** Use future/conditional: "The system is DESIGNED TO process..." or "TARGET: 10,000 rps"
 
 ---
 
-### 6. MISSING UNCERTAINTY MARKERS
-Sections that should have caveats but don't.
+## The Verification Hierarchy
 
-**Check:** Marketing hooks, executive summaries, "key takeaways" - do they acknowledge limitations?
-**Red flag:** 
-> "Our approach delivers 50% cost reduction and 99.9% accuracy."
+The key insight: **not all claims can be verified the same way.**
 
-**Fix:** Add status indicators:
-> "Our approach is DESIGNED TO deliver... (metrics PROJECTED, not measured)"
+```
+Claim Extracted --> Does Source of Truth Exist?
+                           |
+           +---------------+---------------+
+           YES                             NO
+           |                               |
+   Tier 1: Automated              Tier 2: HITL
+   Consistency & Verification     Intelligent Routing
+           |                               |
+   PASS / BLOCK                   APPROVE / REJECT
+```
+
+### Tier 1: Automated Consistency & Verification
+
+**A. Internal Consistency (Ready Now)**
+
+Checks for contradictions *within* a document--no external systems required.
+
+| Check Type | Example |
+|------------|---------|
+| Figure vs. Text | Figure shows B=0.33, text claims B=0.73 |
+| Abstract vs. Body | Abstract claims "40% improvement," body shows 28% |
+| Table vs. Prose | Table lists 5 features, text references 7 |
+| Numerical consistency | Revenue stated as $47M in one section, $49M in another |
+
+This is the **core capability**--solvable, generic, and valuable. A document with conflicting claims becomes a "trusted source of confusion"--the model confidently reports one value, unaware they conflict.
+
+**B. External Verification (Extension Interface)**
+
+For claims that *can* be verified against structured sources:
+
+| Claim Type | Source | Implementation |
+|------------|--------|----------------|
+| "Q3 revenue was $47M" | Financial system | User provides connector |
+| "Feature deployed Oct 15" | Git commits | User provides API |
+| "Customer count: 2,847" | CRM | User provides query |
+
+**Note:** External verification requires bespoke integration for each data source. Clarity Gate provides the *interface* for verification hooks; users implement connectors for their specific systems.
 
 ---
 
-### 7. HITL FACT VERIFICATION ⚠️ MANDATORY
+### Tier 2: HITL Fallback (Intelligent Routing) -- MANDATORY
+
+The value isn't having humans review data--every team does that. The value is **intelligent routing**: the system detects *which* specific claims need human review, sparing humans from reviewing safe ones.
+
+*Example: A 50-claim document might have 48 pass automated checks. The system routes only 2 for human review, reducing manual effort by ~96%.*
+
+---
 
 **Step 0: Request Source of Truth**
 
@@ -114,18 +209,16 @@ Before extracting claims, ask:
 > "Do you have a Source of Truth document for this project?
 > (e.g., project state record, verified metrics, status tracker)
 >
-> If yes, please share it — I'll use it to verify claims.
+> If yes, please share it -- I'll use it to verify claims.
 > If no, I'll present claims for manual verification."
 
 ---
 
-**Why this exists:** Points 1-6 verify that claims are MARKED correctly. They cannot verify if claims are TRUE. An LLM may confidently write false information derived from:
+**Why HITL exists:** Points 1-7 verify that claims are MARKED correctly. They cannot verify if claims are TRUE. An LLM may confidently write false information derived from:
 - Misremembered conversations
 - Incorrect pattern-matching from context
 - Confusing proposals/plans with completed work
 - Assuming demo = deployment, or planned = achieved
-
-**Check:** Extract ALL major factual claims and present them to the human for verification.
 
 **Process:**
 
@@ -143,9 +236,9 @@ Before extracting claims, ask:
    
    | # | Claim | Source in Doc | Human Confirms |
    |---|-------|---------------|----------------|
-   | 1 | [specific claim] | [section/line] | ⬜ True / ⬜ False |
-   | 2 | [specific claim] | [section/line] | ⬜ True / ⬜ False |
-   | 3 | [specific claim] | [section/line] | ⬜ True / ⬜ False |
+   | 1 | [specific claim] | [section/line] | [ ] True / [ ] False |
+   | 2 | [specific claim] | [section/line] | [ ] True / [ ] False |
+   | 3 | [specific claim] | [section/line] | [ ] True / [ ] False |
    
    Please respond with corrections for any false claims.
    ```
@@ -163,10 +256,12 @@ Before extracting claims, ask:
 - Partnership or client names
 - Before/after comparisons
 
-**Fix:** If human identifies false claims, either:
-- Remove the claim entirely
-- Reframe as "proposed", "planned", "hypothesized"
-- Add explicit "NOT VALIDATED" warning
+**The human's job is specific:**
+1. Provide the Source of Truth that was missed, OR
+2. Add appropriate epistemic markers ([PROJECTION], [HYPOTHESIS], [UNVERIFIED]), OR
+3. Reject the claim entirely
+
+This creates an **audit trail**: Document X, Claim Y, verified against Source Z on Date W by Person P.
 
 ---
 
@@ -200,7 +295,7 @@ Status: [current state]
 |-------|-------------|-----------|
 | [claim] | Internal | [internal doc] |
 | [claim] | External | [citation] |
-| [claim] | None | ⚠️ Unverified |
+| [claim] | None | Unverified |
 
 ## Open Items
 | ID | Priority | Description | Status |
@@ -218,10 +313,10 @@ Status: [current state]
 **Source Types:**
 
 | Type | Definition | Example |
-|------|------------|--------|
+|------|------------|---------|
 | **Internal** | Verified state of this project/context | Metrics, status records, team data |
 | **External** | Published research, third-party data | Academic papers, industry reports, official statistics |
-| **None** | Claim without supporting source | ⚠️ Requires HITL verification |
+| **None** | Claim without supporting source | Requires HITL verification |
 
 ---
 
@@ -234,14 +329,14 @@ Run through document looking for these patterns:
 | Specific percentages (89%, 73%, etc.) | Add source or mark as estimate |
 | Comparison tables | Add "PROJECTED" header + uncertainty markers |
 | "Achieves", "delivers", "provides" | Check if validated; if not, use "designed to", "intended to" |
-| ✅ / ✓ checkmarks | Verify these are actually confirmed |
+| Checkmarks | Verify these are actually confirmed |
 | "100%" anything | Almost always needs qualification |
 | Time/cost savings claims | Mark as projected unless measured |
 | "The model recognizes/understands/knows" | Mark as hypothesis about LLM behavior |
 | "Always", "never", "guarantees" | Check if absolute claim is warranted |
-| **Case studies / customer names** | **⚠️ HITL REQUIRED - verify with human** |
-| **Production deployments** | **⚠️ HITL REQUIRED - verify with human** |
-| **Measured outcomes** | **⚠️ HITL REQUIRED - verify with human** |
+| **Case studies / customer names** | **HITL REQUIRED - verify with human** |
+| **Production deployments** | **HITL REQUIRED - verify with human** |
+| **Measured outcomes** | **HITL REQUIRED - verify with human** |
 
 ---
 
@@ -260,19 +355,19 @@ After running Clarity Gate, report:
 ### Warning (could cause equivocation)  
 - [issue + location + fix]
 
-### Passed (Points 1-6)
+### Passed (Points 1-7)
 - [what was already clear]
 
 ---
 
-## ⚠️ HITL Verification Required (Point 7)
+## HITL Verification Required
 
 Before declaring PASS, please confirm these claims are TRUE:
 
 | # | Claim | Source in Doc | Human Confirms |
 |---|-------|---------------|----------------|
-| 1 | [claim] | [location] | ⬜ True / ⬜ False |
-| 2 | [claim] | [location] | ⬜ True / ⬜ False |
+| 1 | [claim] | [location] | [ ] True / [ ] False |
+| 2 | [claim] | [location] | [ ] True / [ ] False |
 
 **Verdict:** PENDING HITL CONFIRMATION
 ```
@@ -298,15 +393,16 @@ Before declaring PASS, please confirm these claims are TRUE:
 
 ## What This Skill Does NOT Do
 
-- ❌ Classify document types (use Stream Coding for that)
-- ❌ Restructure documents 
-- ❌ Add deep links or references
-- ❌ Evaluate writing quality
-- ❌ **Check factual accuracy autonomously** (requires HITL for factual claims)
+- Does not classify document types (use Stream Coding for that)
+- Does not restructure documents 
+- Does not add deep links or references
+- Does not evaluate writing quality
+- **Does not check factual accuracy autonomously** (requires HITL for factual claims)
 
 **This skill verifies:** 
-1. (Points 1-6) Can another LLM read this without mistaking assumptions for facts?
-2. (Point 7) Has a human confirmed the factual claims are actually true?
+1. (Points 1-4) Epistemic quality: Are claims properly qualified?
+2. (Points 5-7) Data quality: Is the document internally consistent?
+3. (HITL) Truth verification: Has a human confirmed factual claims?
 
 ---
 
@@ -342,12 +438,12 @@ Before declaring PASS, please confirm these claims are TRUE:
 
 1. LLM wrote document about a project
 2. Included "Enterprise deployment: 500+ employees, zero PII leaks, 6 months production"
-3. Ran Clarity Gate points 1-6
+3. Ran Clarity Gate points 1-7
 4. Added "(client-reported)" marker to claims
 5. Declared PASS
 
 **The problem:**
-- The client only saw a demo—there was NO production deployment
+- The client only saw a demo--there was NO production deployment
 - The LLM misinterpreted past conversations
 - Adding "(client-reported)" made a FALSE claim look MORE credible
 - Clarity Gate verified the FORM but not the TRUTH
@@ -359,9 +455,9 @@ Before declaring PASS, please confirm these claims are TRUE:
 
 | # | Claim | Source in Doc | Human Confirms |
 |---|-------|---------------|----------------|
-| 1 | Deployed to 500+ employees | Case Study | ⬜ True / ⬜ False |
-| 2 | Zero PII leaks in 6 months production | Case Study | ⬜ True / ⬜ False |
-| 3 | 80% adoption rate achieved | Metrics | ⬜ True / ⬜ False |
+| 1 | Deployed to 500+ employees | Case Study | [ ] True / [ ] False |
+| 2 | Zero PII leaks in 6 months production | Case Study | [ ] True / [ ] False |
+| 3 | 80% adoption rate achieved | Metrics | [ ] True / [ ] False |
 
 Human response: "FALSE - Client only saw a demo. None of this happened."
 ```
@@ -372,34 +468,41 @@ Human response: "FALSE - Client only saw a demo. None of this happened."
 
 ## Related
 
-- **Stream Coding v3.3** — Full documentation-first methodology that includes Clarity Gate as Phase 2→3 checkpoint
+- **[Source of Truth Creator](https://github.com/frmoretto/source-of-truth-creator)** -- Create documents (use before verification)
+- **[Stream Coding](https://github.com/frmoretto/stream-coding)** -- Full documentation-first methodology
 - **Author:** Francesco Marinoni Moretto
 
 ---
 
 ## Changelog
 
-### v1.2 (December 2025)
-- **ADDED:** Step 0 in Point 7 - Request Source of Truth before HITL
-- **ADDED:** Source of Truth Template (adaptable to any domain)
-- **ADDED:** Source Types table (Internal, External, None)
-- **ADDED:** Key principles for Source of Truth documents
+### v1.3 (2025-12-21)
+- Restructured: Points grouped into "Epistemic Checks (1-4)" and "Data Quality Checks (5-7)"
+- Added: Detection vs enforcement distinction in intro
+- Added: Tier 1A (Internal Consistency) vs Tier 1B (External Verification) framework
+- Updated: HITL reframed as "Intelligent Routing" with 96% efficiency example
+- Added: "Trusted source of confusion" explanation for internal consistency value
+- Added: Prior Art reference
 
-### v1.1 (December 2025)
-- **ADDED:** Point 7 - HITL Fact Verification (MANDATORY)
-- **ADDED:** Critical Limitation section explaining FORM vs TRUTH
-- **ADDED:** HITL Failure Case Study
-- **ADDED:** "Source in Doc" column to HITL table for easier verification
-- **UPDATED:** Output format to require HITL confirmation before PASS
-- **UPDATED:** Quick Scan Checklist with HITL-required patterns
-- **UPDATED:** Severity levels to include "HITL REQUIRED"
+### v1.2 (2025-12-21)
+- Added: Step 0 in HITL - Request Source of Truth before verification
+- Added: Source of Truth Template (adaptable to any domain)
+- Added: Source Types table (Internal, External, None)
 
-### v1.0 (November 2025)
+### v1.1 (2025-12-21)
+- Added: HITL Fact Verification (mandatory)
+- Added: Critical Limitation section explaining FORM vs TRUTH
+- Added: HITL Failure Case Study
+- Added: "Source in Doc" column to HITL table
+- Updated: Output format to require HITL confirmation before PASS
+- Updated: Severity levels to include "HITL REQUIRED"
+
+### v1.0 (2025-11)
 - Initial release with 6-point verification
 
 ---
 
-**Version:** 1.2
-**Scope:** Any document that will be read by LLMs
+**Version:** 1.3
+**Scope:** Pre-ingestion verification for RAG systems and LLM document handoff
 **Time:** 5-15 minutes (verification) + HITL response time (varies)
 **Output:** List of issues + fixes + HITL confirmation, then PASS verdict
