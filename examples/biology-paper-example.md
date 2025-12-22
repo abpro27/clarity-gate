@@ -1,26 +1,79 @@
 # Example: Biology Paper Discrepancy Detection
 
 **Type:** Internal Consistency Check (Tier 1A)  
-**Document:** Scientific paper on prokaryote scaling  
-**Result:** DISCREPANCY FOUND
+**Document:** Scientific paper on metabolic scaling  
+**Result:** DISCREPANCY FOUND  
+**Reproducible:** Yes — see instructions below
+
+---
+
+## Paper Reference
+
+- **Title:** Metabolic scaling in small life forms
+- **Authors:** Mark E. Ritchie, Christopher P. Kempes
+- **arXiv:** [2403.00001](https://arxiv.org/abs/2403.00001)
+- **PDF:** https://arxiv.org/pdf/2403.00001
+
+**Copyright Note:** We do not redistribute the PDF. Download directly from arXiv.
 
 ---
 
 ## The Problem
 
-A biology paper contained conflicting values for a key parameter (β) between a figure and the text. This type of discrepancy could propagate into a RAG knowledge base and cause downstream hallucinations.
+This biology paper contains multiple internal tensions between figure labels and text claims for the scaling exponent β. These discrepancies could propagate into a RAG knowledge base and cause downstream confusion.
 
 ---
 
-## What Clarity Gate Found
+## Multi-Model Validation (December 2025)
 
-### Input
+Three different models independently found numerical tensions in this paper:
 
-A scientific paper discussing scaling laws in prokaryotes, with:
-- Figure 3 showing graphical data with computed β values
-- Section 4.2 containing textual claims about the same β values
+| Model | Figure Value | Text Value | Location | Notes |
+|-------|--------------|------------|----------|-------|
+| **ArxiParse** | β = 0.33 (1/3) | β = 0.73 (11/15) | Large prokaryote asymptotic vs Eq. 7 | 121% discrepancy |
+| **Gemini 3 Pro** | β = 1.26 | β = 0.73 | Superlinear label vs asymptotic prediction | Paper explains via "essential volume" |
+| **Claude Opus 4.5** | β = 1.26 | β = 1.68 | Superlinear label (Fig 2) vs text claim (page 5) | 25% discrepancy |
 
-### Detection
+### Key Finding
+
+All three findings are legitimate. The paper addresses some through the "essential volume" explanation, but the numerical inconsistencies exist and require careful reading to reconcile.
+
+This demonstrates:
+- Complex papers have multiple cross-referencing challenges
+- Automated checking surfaces issues for human review
+- Different models may catch different discrepancies
+- Even explained discrepancies benefit from explicit flagging
+
+---
+
+## How to Reproduce
+
+### Option 1: Manual Verification (Claude/Gemini)
+
+1. Download the PDF from [arXiv 2403.00001](https://arxiv.org/pdf/2403.00001)
+2. Upload to Claude Opus 4.5 or Gemini 3 Pro
+3. Use this prompt:
+
+```
+Please analyze Figure 2 in this paper. Compare the scaling exponent (β) 
+shown in the figure for prokaryotes against the values predicted in the 
+text (Equation 7, Section 4.2, and page 5).
+
+Report any numerical discrepancies between what the figure shows and 
+what the text claims.
+```
+
+4. The model should identify at least one of the discrepancies listed above
+
+### Option 2: ArxiParse Pipeline
+
+For automated cross-referencing of scientific papers:
+- See [arxiparse.org](https://arxiparse.org)
+- The pipeline extracts skeleton, figures, and runs claim validation automatically
+
+---
+
+## What Clarity Gate Found (ArxiParse Output)
 
 ```yaml
 check: internal_consistency
@@ -32,14 +85,14 @@ findings:
     parameter: β (scaling exponent)
     
     figure:
-      location: Figure 3, panel B
+      location: Figure 2
       value: β = 1/3 ≈ 0.33
       context: "for large prokaryotes"
       
     text:
-      location: Section 4.2, paragraph 3
+      location: Equation 7 prediction
       value: β = 11/15 = 0.73
-      context: "for prokaryotes"
+      context: "prokaryote scaling"
       
     discrepancy:
       delta: 0.40
@@ -47,32 +100,10 @@ findings:
       severity: HIGH
       
     assessment: >
-      The text claims β = 0.73 for prokaryotes, but Figure 3 
-      shows β = 0.33 for large prokaryotes. This is either:
-      (a) Different populations (large vs. all prokaryotes)
-      (b) An error in one of the values
-      (c) Different measurement methodologies
-      
-      The discrepancy is significant enough to affect 
-      downstream conclusions.
-```
-
-### Output
-
-```yaml
-verification_result:
-  status: BLOCK
-  document: "prokaryote_scaling_paper.pdf"
-  timestamp: "2025-12-21T14:30:00Z"
-  
-  action: BLOCK - Resolve discrepancy before ingestion
-  
-  recommendation: >
-    Before ingesting this paper into a knowledge base:
-    1. Verify which β value is correct
-    2. If both are correct for different populations, 
-       ensure text clarifies the distinction
-    3. If one is an error, obtain corrected version
+      The text predicts β = 0.73 from Equation 7, but Figure 2 
+      shows β = 0.33 for large prokaryotes. The paper explains 
+      this through scaling regime transitions, but the numerical 
+      tension warrants flagging for reader attention.
 ```
 
 ---
@@ -86,16 +117,18 @@ verification_result:
 3. RAG retrieves conflicting chunks:
    - Chunk A: "β = 0.33 for large prokaryotes"
    - Chunk B: "β = 0.73 for prokaryotes"
+   - Chunk C: "β = 1.26 superlinear scaling"
+   - Chunk D: "β = 1.68 for small prokaryotes"
 4. LLM confidently reports one or synthesizes incorrectly
 5. User makes decisions based on unreliable information
 
 ### With Clarity Gate
 
-1. Discrepancy detected at ingestion
-2. Document blocked pending resolution
-3. Human reviewer clarifies the discrepancy
-4. Corrected/annotated version ingested
-5. Knowledge base maintains consistency
+1. Discrepancies detected at ingestion
+2. Document flagged for human review
+3. Reviewer understands the scaling regime complexity
+4. Annotated version ingested with context
+5. Knowledge base maintains accurate nuance
 
 ---
 
@@ -103,81 +136,67 @@ verification_result:
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| Detection time | ~12 seconds | Single run, informal timing |
-| Manual equivalent | ~45 minutes | Estimated time for researcher to cross-reference |
-| Discrepancy found | Δ = 0.40 | 121% relative error |
+| Detection time | < 1 minute | Single run, informal timing |
+| Manual equivalent | ~20+ minutes | Estimated time for careful cross-referencing |
+| Models tested | 3 | ArxiParse, Gemini 3 Pro, Opus 4.5 |
 
-**Caveat:** These are informal measurements from a single test, not rigorous benchmarks.
+**Caveat:** These are informal measurements, not rigorous benchmarks.
 
 ---
 
 ## The 7-Point Analysis
 
-This example demonstrates several verification points:
-
 | Check | Result | Finding |
 |-------|--------|---------|
-| 1. Hypothesis vs. Fact | N/A | Not the issue here |
-| 2. Uncertainty Markers | N/A | Not the issue here |
-| 3. Assumption Visibility | ⚠️ | Different populations may be assumed |
+| 1. Hypothesis vs. Fact | ⚠️ | Model predictions vs measurements |
+| 2. Uncertainty Markers | ⚠️ | Predictions not always marked as such |
+| 3. Assumption Visibility | ⚠️ | Different populations assumed |
 | 4. Authoritative-Looking Data | ⚠️ | Figure presents as authoritative |
-| **5. Data Consistency** | **❌ FAIL** | **Figure vs. text mismatch** |
-| 6. Implicit Causation | N/A | Not the issue here |
-| 7. Future State as Present | N/A | Not the issue here |
+| **5. Data Consistency** | **❌ FAIL** | **Multiple figure vs. text mismatches** |
+| 6. Implicit Causation | N/A | Not the primary issue |
+| 7. Future State as Present | N/A | Not the primary issue |
 
 ---
 
 ## Resolution Options
 
-### Option A: Values Are Both Correct
+### Option A: Add Explicit Reconciliation
 
-If β = 0.33 applies to "large prokaryotes" and β = 0.73 applies to "all prokaryotes":
-
-**Fix:** Add clarifying text to make the distinction explicit.
+The paper does explain the different scaling regimes, but could be clearer:
 
 ```markdown
-Before: "β = 11/15 = 0.73 for prokaryotes"
-After:  "β = 11/15 = 0.73 for the full prokaryote population 
-         (cf. β = 0.33 for large prokaryotes, Figure 3)"
+Suggested annotation for RAG ingestion:
+
+"NOTE: This paper discusses multiple β values for prokaryotes:
+- β ≈ 1.68 (or 1.26): Superlinear regime for smallest prokaryotes
+- β = 11/15 ≈ 0.73: Asymptotic prediction from Equation 7  
+- β = 1/3 ≈ 0.33: Large prokaryote diffusion limit
+
+These are not contradictions but different scaling regimes. 
+See Section 4.2 and SI Figure 4 for full explanation."
 ```
 
-### Option B: One Value Is an Error
-
-If one value is incorrect:
-
-**Fix:** Obtain corrected version of the paper, or add annotation.
+### Option B: Ingest with Warnings
 
 ```yaml
 annotation:
-  type: known_error
-  location: Section 4.2, paragraph 3
-  note: "β value may be incorrect; see Figure 3 for measured value"
-  added_by: human_reviewer
-  date: 2025-12-21
-```
-
-### Option C: Methodology Difference
-
-If different measurement approaches yield different values:
-
-**Fix:** Add methodology context to both claims.
-
-```markdown
-Figure 3: "β = 0.33 [measured via geometric scaling]"
-Text: "β = 0.73 [calculated from metabolic rates]"
+  type: complexity_warning
+  note: "Multiple β values exist for different size regimes; see paper for details"
+  added_by: clarity_gate
+  date: 2025-12-22
 ```
 
 ---
 
 ## Generalization
 
-This example demonstrates the pattern for all Tier 1A checks:
+This example demonstrates Tier 1A pattern for all internal consistency checks:
 
 1. **Extract claims** from different document locations
 2. **Cross-reference** for consistency
 3. **Flag discrepancies** with specific locations and values
-4. **Route to human** with clear resolution options
-5. **Block ingestion** until resolved
+4. **Route to human** with clear context
+5. **Annotate or block** based on severity
 
 The same approach applies to:
 - Abstract vs. body claims
@@ -187,24 +206,14 @@ The same approach applies to:
 
 ---
 
-## Limitations of This Example
+## Limitations
 
 | Limitation | Implication |
 |------------|-------------|
-| Single document | May not generalize to all paper types |
-| Numerical claims only | Text-based inconsistencies harder to detect |
-| Informal timing | Not a benchmark |
-| English only | Other languages not tested |
-
----
-
-## Try It Yourself
-
-To run this check on your own documents:
-
-1. **Claude Desktop/Code:** Load SKILL.md, ask "Run clarity gate on [document]"
-2. **Manual:** Use the 7-point checklist in ARCHITECTURE.md
-3. **Programmatic:** (Phase 2) Use the verification API
+| Single paper | May not generalize to all paper types |
+| Physics/biology domain | Other domains not tested |
+| Numerical claims focus | Text-based inconsistencies harder |
+| Informal timing | Not benchmarked |
 
 ---
 
@@ -212,4 +221,5 @@ To run this check on your own documents:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | 2025-12-21 | Initial example documentation |
+| 1.0 | 2025-12-21 | Initial example |
+| 2.0 | 2025-12-22 | Added paper reference, multi-model validation, reproducibility instructions |

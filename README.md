@@ -25,7 +25,9 @@ The model isn't hallucinating. It's faithfully representing what it was told.
 **Accuracy verification asks:** "Does this match the source?"  
 **Epistemic verification asks:** "Is this claim properly qualified?"
 
-Both matter. Only one has open-source tooling.
+Both matter. Accuracy verification has mature open-source tools. Epistemic verification has excellent detection systems (UnScientify, HedgeHog, BioScope), but, as far as I know, no open-source enforcement layer.
+
+Clarity Gate is a proposal for that layer.
 
 ---
 
@@ -42,7 +44,7 @@ Clarity Gate is an **open-source pre-ingestion verification system** for epistem
 |-----------|--------|
 | Pre-ingestion gate pattern | ✅ Proven (Adlib, pharma QMS) |
 | Epistemic detection | ✅ Proven (UnScientify, HedgeHog) |
-| **Pre-ingestion epistemic enforcement** | ❌ Gap (to our knowledge) |
+| **Pre-ingestion epistemic enforcement** | ❌ Gap (to my knowledge) |
 | **Open-source accessibility** | ❌ Gap |
 
 | Dimension | Enterprise (Adlib) | Clarity Gate |
@@ -120,7 +122,7 @@ Checks for contradictions *within* a document — no external systems required.
 | Abstract vs. Body | Abstract claims "40% improvement," body shows 28% |
 | Table vs. Prose | Table lists 5 features, text references 7 |
 
-See [biology paper example](examples/biology-paper-example.md) for a real case where Clarity Gate detected a Δ=0.40 discrepancy in ~12 seconds (single run, informal timing).
+See [biology paper example](examples/biology-paper-example.md) for a real case where Clarity Gate detected a Δ=0.40 discrepancy in less than a minute (single run, informal timing).
 
 ### Tier 1B: External Verification (Extension Interface)
 
@@ -157,7 +159,7 @@ Clarity Gate builds on proven patterns. See [PRIOR_ART.md](docs/PRIOR_ART.md) fo
 **Fact-Checking:** FEVER, ClaimBuster  
 **Post-Retrieval:** Self-RAG, RAGAS, TruLens
 
-**The key distinction:** Existing tools **detect** uncertainty markers already present. Clarity Gate **enforces** their presence where epistemically required.
+**The opportunity:** Existing detection tools (UnScientify, HedgeHog, BioScope) excel at identifying uncertainty markers. Clarity Gate proposes a complementary enforcement layer that routes ambiguous claims to human review or marks them automatically. I believe these could work together. Community input on integration is welcome.
 
 ---
 
@@ -226,7 +228,7 @@ CC BY 4.0 — Use freely with attribution.
 
 Looking for:
 
-1. **Prior art** — Open-source pre-ingestion gates for epistemic quality we missed?
+1. **Prior art** — Open-source pre-ingestion gates for epistemic quality I missed?
 2. **Integration** — LlamaIndex, LangChain implementations
 3. **Verification feedback** — Are the 7 points the right focus?
 4. **Real-world examples** — Documents that expose edge cases
