@@ -58,19 +58,28 @@ Clarity Gate is an **open-source pre-ingestion verification system** for epistem
 
 ## Quick Start
 
-### Option 1: Claude Skill (Recommended)
+### Option 1: claude.ai / Claude Desktop
 
-1. Download [`SKILL.md`](SKILL.md) or the zip from releases
-2. Add to Claude Desktop: Settings → Capabilities → Skills → Add
-3. Ask: *"Run clarity gate on this document"*
+1. Download [`clarity-gate.zip`](clarity-gate.zip)
+2. Go to Settings → Features → Skills → Add
+3. Upload the zip file
+4. Ask Claude: *"Run clarity gate on this document"*
 
-### Option 2: Manual Checklist
+### Option 2: Claude Code
+
+1. Copy `SKILL.md` to your project's skills folder
+2. Claude Code will automatically detect and use it
+3. Ask Claude: *"Run clarity gate on this document"*
+
+### Option 3: Claude Projects
+
+Add [`SKILL.md`](SKILL.md) to project knowledge. Claude will search it when needed, though Skills provide better integration.
+
+### Option 4: Manual / Other LLMs
 
 Use the [7-point verification](docs/ARCHITECTURE.md#the-7-verification-points) as a manual review process.
 
-### Option 3: Integration
-
-See [ROADMAP.md](docs/ROADMAP.md) for LlamaIndex/LangChain integration plans.
+For Cursor, Windsurf, or other AI tools, extract the 7 verification points into your `.cursorrules`. The methodology is tool-agnostic—only SKILL.md is Claude-optimized.
 
 ---
 
