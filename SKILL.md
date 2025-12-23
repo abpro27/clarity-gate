@@ -3,7 +3,7 @@ name: clarity-gate
 description: Pre-ingestion verification for epistemic quality in RAG systems. Use when reviewing documents before they enter knowledge bases, checking if claims could be misinterpreted as facts, or validating that hypotheses are clearly marked. Triggers on "clarity gate", "check for hallucination risks", "can an LLM read this safely", "review for equivocation", "verify document clarity", "pre-ingestion check".
 ---
 
-# Clarity Gate v1.3
+# Clarity Gate v1.4
 
 **Purpose:** Pre-ingestion verification system that enforces epistemic quality before documents enter RAG knowledge bases.
 
@@ -369,6 +369,14 @@ Before declaring PASS, please confirm these claims are TRUE:
 | 1 | [claim] | [location] | [ ] True / [ ] False |
 | 2 | [claim] | [location] | [ ] True / [ ] False |
 
+---
+
+**Would you like me to produce an annotated version of this document with the fixes applied?**
+
+(An annotated document improves how mid-tier LLMs handle the content.)
+
+---
+
 **Verdict:** PENDING HITL CONFIRMATION
 ```
 
@@ -377,6 +385,16 @@ Before declaring PASS, please confirm these claims are TRUE:
 ```
 **Verdict:** PASS (HITL confirmed [date])
 ```
+
+**If user requests annotation:**
+
+Produce the complete document with all fixes applied inline:
+- Uncertainty markers added
+- Assumptions made visible
+- Projections labeled
+- Unverified claims marked
+
+This creates a **Clarity-Gated Document (CGD)** ready for RAG ingestion or handoff to other LLM systems.
 
 ---
 
@@ -476,6 +494,11 @@ Human response: "FALSE - Client only saw a demo. None of this happened."
 
 ## Changelog
 
+### v1.4 (2025-12-23)
+- Added: Annotation offer after verification ("Would you like me to produce an annotated version?")
+- Added: CGD (Clarity-Gated Document) output mode
+- Bridges gap between checker and annotator functionality
+
 ### v1.3 (2025-12-21)
 - Restructured: Points grouped into "Epistemic Checks (1-4)" and "Data Quality Checks (5-7)"
 - Added: Detection vs enforcement distinction in intro
@@ -502,7 +525,7 @@ Human response: "FALSE - Client only saw a demo. None of this happened."
 
 ---
 
-**Version:** 1.3
+**Version:** 1.4
 **Scope:** Pre-ingestion verification for RAG systems and LLM document handoff
 **Time:** 5-15 minutes (verification) + HITL response time (varies)
-**Output:** List of issues + fixes + HITL confirmation, then PASS verdict
+**Output:** List of issues + fixes + HITL confirmation + optional annotated document (CGD), then PASS verdict

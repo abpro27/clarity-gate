@@ -1,4 +1,4 @@
-# Clarity Gate
+# Clarity Gate v1.4
 
 **Open-source pre-ingestion verification for epistemic quality in RAG systems.**
 
@@ -80,6 +80,24 @@ Add [`SKILL.md`](SKILL.md) to project knowledge. Claude will search it when need
 Use the [7-point verification](docs/ARCHITECTURE.md#the-7-verification-points) as a manual review process.
 
 For Cursor, Windsurf, or other AI tools, extract the 7 verification points into your `.cursorrules`. The methodology is tool-agnostic—only SKILL.md is Claude-optimized.
+
+---
+
+## Two Modes
+
+**Verify Mode (default):**
+```
+"Run clarity gate on this document"
+→ Issues report + HITL verification table
+```
+
+**Annotate Mode:**
+```
+"Run clarity gate and annotate this document"
+→ Complete document with fixes applied inline (CGD)
+```
+
+The annotated output is a **Clarity-Gated Document (CGD)**—research shows mid-tier LLMs handle CGDs with better abstention on ambiguous claims.
 
 ---
 
@@ -188,7 +206,7 @@ This system checks whether claims are properly marked as uncertain — it cannot
 
 | Phase | Status | Description |
 |-------|--------|-------------|
-| **Phase 1** | ✅ Ready | Internal consistency checks (Claude skill) |
+| **Phase 1** | ✅ Ready | Internal consistency checks + annotation (Claude skill) |
 | **Phase 2** | 🔜 Planned | External verification hooks (user connectors) |
 | **Phase 3** | 🔜 Planned | Confidence scoring for HITL optimization |
 
