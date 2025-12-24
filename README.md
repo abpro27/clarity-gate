@@ -149,7 +149,7 @@ Checks for contradictions *within* a document — no external systems required.
 | Abstract vs. Body | Abstract claims "40% improvement," body shows 28% |
 | Table vs. Prose | Table lists 5 features, text references 7 |
 
-See [biology paper example](examples/biology-paper-example.md) for a real case where Clarity Gate detected a Δ=0.40 discrepancy in less than a minute (single run, informal timing).
+See [biology paper example](examples/biology-paper-example.md) for a real case where Clarity Gate detected a Δ=0.40 discrepancy. Try it yourself at [arxiparse.org](https://arxiparse.org).
 
 ### Tier 1B: External Verification (Extension Interface)
 
@@ -228,6 +228,9 @@ See [ROADMAP.md](docs/ROADMAP.md) for details and timeline.
 ---
 
 ## Related
+
+**arxiparse.org** — Live implementation for scientific papers  
+[arxiparse.org](https://arxiparse.org)
 
 **Source of Truth Creator** — Create epistemically calibrated documents (use before verification)  
 [github.com/frmoretto/source-of-truth-creator](https://github.com/frmoretto/source-of-truth-creator)
