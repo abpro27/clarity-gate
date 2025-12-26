@@ -55,11 +55,11 @@ This demonstrates:
 3. Use this prompt:
 
 ```
-Please analyze Figure 2 in this paper. Compare the scaling exponent (β) 
-shown in the figure for prokaryotes against the values predicted in the 
-text (Equation 7, Section 4.2, and page 5).
+Please analyze Figure 2 in this paper. Compare the scaling exponent (β)
+shown in the figure for prokaryotes against the values predicted in the
+text (Equation 7, the Metabolic scaling section on page 5, and Supplementary Figure 4 on page 19).
 
-Report any numerical discrepancies between what the figure shows and 
+Report any numerical discrepancies between what the figure shows and
 what the text claims.
 ```
 
@@ -172,8 +172,8 @@ Suggested annotation for RAG ingestion:
 - β = 11/15 ≈ 0.73: Asymptotic prediction from Equation 7  
 - β = 1/3 ≈ 0.33: Large prokaryote diffusion limit
 
-These are not contradictions but different scaling regimes. 
-See Section 4.2 and SI Figure 4 for full explanation."
+These are not contradictions but different scaling regimes.
+See the Metabolic scaling section (page 5) and Supplementary Figure 4 (page 19) for full explanation."
 ```
 
 ### Option B: Ingest with Warnings
