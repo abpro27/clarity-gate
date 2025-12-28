@@ -3,7 +3,7 @@ name: clarity-gate
 description: Pre-ingestion verification for epistemic quality in RAG systems. Use when reviewing documents before they enter knowledge bases, checking if claims could be misinterpreted as facts, or validating that hypotheses are clearly marked. Triggers on "clarity gate", "check for hallucination risks", "can an LLM read this safely", "review for equivocation", "verify document clarity", "pre-ingestion check".
 ---
 
-# Clarity Gate v1.4
+# Clarity Gate v1.5
 
 **Purpose:** Pre-ingestion verification system that enforces epistemic quality before documents enter RAG knowledge bases.
 
@@ -53,7 +53,7 @@ Clarity Gate **enforces** their presence where epistemically required ("Should u
 
 ---
 
-## The 7 Verification Points
+## The 9 Verification Points
 
 ### Epistemic Checks (Core Focus: Points 1-4)
 
@@ -146,6 +146,75 @@ Describing planned/hoped outcomes as if already achieved.
 **Red flag:** "The system processes 10,000 requests per second" (when it hasn't been built)
 
 **Fix:** Use future/conditional: "The system is DESIGNED TO process..." or "TARGET: 10,000 rps"
+
+---
+
+### Verification Routing (Points 8-9)
+
+**8. TEMPORAL COHERENCE**
+Document dates and timestamps must be internally consistent and plausible.
+
+**Check:** Are dates coherent with each other and with the present?
+
+| Fails | Passes |
+|-------|--------|
+| "Last Updated: December 2024" (when current date is December 2025) | "Last Updated: December 2025" |
+| v1.0.0 dated 2024-12-23, v1.1.0 dated 2024-12-20 (out of order) | Versions in chronological order |
+| "Deployed in Q3 2025" in a doc from Q1 2025 (future as fact) | "PLANNED: Q3 2025" |
+| "Current CEO is X" (when X left 2 years ago) | "As of Dec 2025, CEO is Y" |
+
+**Sub-checks:**
+1. **Document date vs current date**: Is "Last Updated" in the future or suspiciously stale (>6 months)?
+2. **Internal chronology**: Are version numbers, event dates in logical sequence?
+3. **Reference freshness**: Do "current", "now", "today" claims need staleness markers?
+
+**Fix:** 
+- Update dates to current
+- Add "as of [date]" qualifiers to time-sensitive claims
+- Flag stale "current" claims for review
+
+**Scope boundaries:**
+- ✅ IN: Catching wrong years, chronological inconsistencies, stale markers
+- ❌ OUT: Judging if timelines are "reasonable" (subjective), verifying events happened on stated dates (HITL)
+
+---
+
+**9. EXTERNALLY VERIFIABLE CLAIMS**
+Specific numbers that could be fact-checked should be flagged for verification.
+
+**Check:** Does the document contain pricing, statistics, rates, or competitor claims without sources?
+
+**Red flags:**
+
+| Type | Example | Risk |
+|------|---------|------|
+| Pricing | "Costs ~$0.005 per call" | API pricing changes; may be outdated or wrong |
+| Statistics | "Papers average 15-30 equations" | Sounds plausible but may be wildly off |
+| Rates/ratios | "40% of researchers use X" | Specific % needs citation |
+| Competitor claims | "No competitor offers Y" | May be outdated or incorrect |
+| Industry facts | "The standard is X" | Standards evolve |
+
+**Why this matters:**
+These claims are dangerous because they:
+1. Look authoritative (specific numbers)
+2. Sound plausible (common-sense estimates)
+3. Are verifiable (unlike opinions)
+4. Are often wrong (pricing changes, statistics misremembered)
+
+An LLM ingesting "costs ~$0.005" will confidently repeat this—even if actual cost is 10x different.
+
+**Fix options:**
+1. Add source: "~$0.005 (Gemini pricing, Dec 2025)"
+2. Add uncertainty: "~$0.005 (estimated, verify current pricing)"
+3. Route to verification: Flag for HITL or external search
+4. Generalize: "low cost per call" instead of specific number
+
+| Before | After |
+|--------|-------|
+| "Costs ~$0.005 per call" | "Costs ~$0.001 per call (Gemini 2.0 Flash, Dec 2025)" |
+| "Papers average 15-30 equations" | "Papers contain varying numbers of equations (varies significantly by field)" |
+| "All competitors use PDFs" | "Most competitors process PDFs (based on Dec 2025 review)" |
+| "The API returns results in 50ms" | "The API returns results in ~50ms (internal benchmark, Nov 2025)" |
 
 ---
 
@@ -337,6 +406,15 @@ Run through document looking for these patterns:
 | **Case studies / customer names** | **HITL REQUIRED - verify with human** |
 | **Production deployments** | **HITL REQUIRED - verify with human** |
 | **Measured outcomes** | **HITL REQUIRED - verify with human** |
+| "Last Updated: [date]" | Check against current date (Point 8) |
+| Version numbers with dates | Verify chronological order (Point 8) |
+| "Current", "now", "today", "as of" | Flag for staleness check (Point 8) |
+| Year in document ≠ current year | Verify intentional vs error (Point 8) |
+| **"$X.XX" or "~$X" (pricing)** | **⚠️ Flag for external verification (Point 9)** |
+| **"averages", "typically", "on average"** | **⚠️ Flag for source/citation (Point 9)** |
+| **"X% of", "X per Y" (rates/ratios)** | **⚠️ Flag for source/citation (Point 9)** |
+| **Competitor capability claims** | **⚠️ Flag for external verification (Point 9)** |
+| **"All X", "No X", "Every X"** | **⚠️ Flag absolutes for verification (Point 9)** |
 
 ---
 
@@ -355,8 +433,22 @@ After running Clarity Gate, report:
 ### Warning (could cause equivocation)  
 - [issue + location + fix]
 
-### Passed (Points 1-7)
+### Temporal (date/time issues)
+- [issue + location + fix]
+
+### Passed (Points 1-9)
 - [what was already clear]
+
+---
+
+## Externally Verifiable Claims
+
+| # | Claim | Type | Suggested Verification |
+|---|-------|------|------------------------|
+| 1 | [specific claim] | Pricing / Statistic / Competitor | [where to verify] |
+| 2 | [specific claim] | Pricing / Statistic / Competitor | [where to verify] |
+
+**Verification status:** ⬜ Pending / ✅ Verified / ❌ Incorrect
 
 ---
 
@@ -368,6 +460,17 @@ Before declaring PASS, please confirm these claims are TRUE:
 |---|-------|---------------|----------------|
 | 1 | [claim] | [location] | [ ] True / [ ] False |
 | 2 | [claim] | [location] | [ ] True / [ ] False |
+
+**Additional HITL categories (v1.5):**
+- Pricing / cost claims — API costs change; verify against current docs
+- Statistical generalizations — "X averages Y" claims need citation
+- Competitor capability claims — May be outdated or incorrect
+- Time-sensitive facts — "Current X is Y" may have changed
+
+**Verification options:**
+1. Human confirmation (traditional HITL)
+2. External search (Perplexity, web search)
+3. Source documentation (official pricing pages, studies)
 
 ---
 
@@ -404,8 +507,10 @@ This creates a **Clarity-Gated Document (CGD)** ready for RAG ingestion or hando
 |-------|------------|--------|
 | **CRITICAL** | LLM will likely treat hypothesis as fact | Must fix before use |
 | **WARNING** | LLM might misinterpret | Should fix |
+| **TEMPORAL** | Date/time inconsistency detected | Verify and update |
+| **VERIFIABLE** | Specific claim that could be fact-checked | Route to HITL or external search |
 | **HITL REQUIRED** | Factual claim needs human verification | Cannot pass without confirmation |
-| **PASS** | Clearly marked, no ambiguity, HITL confirmed | No action needed |
+| **PASS** | Clearly marked, no ambiguity, verified | No action needed |
 
 ---
 
@@ -420,7 +525,8 @@ This creates a **Clarity-Gated Document (CGD)** ready for RAG ingestion or hando
 **This skill verifies:** 
 1. (Points 1-4) Epistemic quality: Are claims properly qualified?
 2. (Points 5-7) Data quality: Is the document internally consistent?
-3. (HITL) Truth verification: Has a human confirmed factual claims?
+3. (Points 8-9) Verification routing: Are temporal and verifiable claims flagged?
+4. (HITL) Truth verification: Has a human confirmed factual claims?
 
 ---
 
@@ -494,6 +600,24 @@ Human response: "FALSE - Client only saw a demo. None of this happened."
 
 ## Changelog
 
+### v1.5 (2025-12-28)
+- **ADDED:** Point 8 - Temporal Coherence check
+  - Document date vs current date validation
+  - Internal chronology verification
+  - Staleness detection for "current" claims
+  - Scope boundaries (IN: wrong years, chronological issues; OUT: subjective timelines)
+- **ADDED:** Point 9 - Externally Verifiable Claims check
+  - Pricing/cost claim flagging
+  - Statistical generalization detection  
+  - Competitor claim routing
+  - Fix options: add source, add uncertainty, route to verification, generalize
+- **EXPANDED:** HITL categories to include pricing, statistics, competitor claims, time-sensitive facts
+- **ADDED:** New severity levels "TEMPORAL" and "VERIFIABLE"
+- **ADDED:** Quick Scan patterns for temporal and verifiable claims
+- **ADDED:** Output section for Externally Verifiable Claims with verification status tracking
+- **RESTRUCTURED:** Points now grouped as Epistemic (1-4), Data Quality (5-7), Verification Routing (8-9)
+- **MOTIVATION:** Production use revealed "confident plausible falsehoods" (correct form, wrong facts) passing review. External validation caught pricing errors (10x off) and statistic errors (7x off) that had proper uncertainty markers but were factually incorrect.
+
 ### v1.4 (2025-12-23)
 - Added: Annotation offer after verification ("Would you like me to produce an annotated version?")
 - Added: CGD (Clarity-Gated Document) output mode
@@ -525,7 +649,7 @@ Human response: "FALSE - Client only saw a demo. None of this happened."
 
 ---
 
-**Version:** 1.4
+**Version:** 1.5
 **Scope:** Pre-ingestion verification for RAG systems and LLM document handoff
 **Time:** 5-15 minutes (verification) + HITL response time (varies)
-**Output:** List of issues + fixes + HITL confirmation + optional annotated document (CGD), then PASS verdict
+**Output:** List of issues + fixes + externally verifiable claims table + HITL confirmation + optional annotated document (CGD), then PASS verdict

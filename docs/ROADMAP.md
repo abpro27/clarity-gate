@@ -1,7 +1,7 @@
 # Clarity Gate Roadmap
 
-**Version:** 1.0  
-**Last Updated:** 2025-12-21
+**Version:** 1.1
+**Last Updated:** 2025-12-28
 
 ---
 
@@ -29,7 +29,9 @@ Clarity Gate development follows a phased approach, starting with the highest-va
 
 | Component | Status | Description |
 |-----------|--------|-------------|
-| 7-point verification checklist | ✅ Ready | 4 epistemic + 3 data quality checks |
+| 9-point verification checklist | ✅ Ready | 4 epistemic + 3 data quality + 2 verification routing checks |
+| Temporal coherence detection | ✅ Ready (v1.5) | Date validation, chronology checks |
+| Externally verifiable claims | ✅ Ready (v1.5) | Pricing, statistics, competitor claim flagging |
 | Claude skill implementation | ✅ Ready | SKILL.md for Claude Desktop/Code |
 | Internal consistency detection | ✅ Ready | Figure vs. text, abstract vs. body |
 | HITL protocol | ✅ Ready | Intelligent routing to human review |
@@ -231,7 +233,7 @@ clarity_gate_tool = Tool(
 ### Phase 1 Contributions Welcome
 
 - **Prior art discoveries** -- Open-source pre-ingestion gates we missed?
-- **Verification point feedback** -- Are the 7 points the right focus?
+- **Verification point feedback** -- Are the 9 points the right focus?
 - **Real-world examples** -- Documents that expose edge cases
 - **Documentation improvements** -- Clarity and completeness
 
@@ -283,4 +285,5 @@ clarity_gate_tool = Tool(
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1 | 2025-12-28 | Updated for v1.5 (9-point system) |
 | 1.0 | 2025-12-21 | Initial roadmap |

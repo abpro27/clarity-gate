@@ -1,17 +1,17 @@
 # Clarity Gate Architecture
 
-**Version:** 1.0  
-**Last Updated:** 2025-12-21
+**Version:** 1.5
+**Last Updated:** 2025-12-28
 
 ---
 
 ## Overview
 
-Clarity Gate is a pre-ingestion verification system for epistemic quality. This document details the verification architecture, including the 7-point checklist and tiered verification hierarchy.
+Clarity Gate is a pre-ingestion verification system for epistemic quality. This document details the verification architecture, including the 9-point checklist and tiered verification hierarchy.
 
 ---
 
-## The 7 Verification Points
+## The 9 Verification Points
 
 ### Epistemic Checks (Core Focus)
 
@@ -119,6 +119,62 @@ These three checks support epistemic quality by catching data issues.
 | "The API supports GraphQL" | "The API **will support** GraphQL [Q2 roadmap]" |
 
 **Why it matters:** Aspirations presented as reality create false expectations.
+
+---
+
+### Verification Routing (Points 8-9)
+
+These two checks improve detection and routing for claims that need external verification.
+
+#### 8. Temporal Coherence
+
+**Question:** Are dates coherent with each other and with the present?
+
+| Fails | Passes |
+|-------|--------|
+| "Last Updated: December 2024" (current date is December 2025) | "Last Updated: December 2025" |
+| v1.0.0 dated 2024-12-23, v1.1.0 dated 2024-12-20 (out of order) | Versions in chronological order |
+| "Deployed in Q3 2025" in a doc from Q1 2025 | "PLANNED: Q3 2025" |
+| "Current CEO is X" (when X left 2 years ago) | "As of Dec 2025, CEO is Y" |
+
+**Sub-checks:**
+1. **Document date vs current date**: Is "Last Updated" in the future or suspiciously stale (>6 months)?
+2. **Internal chronology**: Are version numbers, event dates in logical sequence?
+3. **Reference freshness**: Do "current", "now", "today" claims need staleness markers?
+
+**Why it matters:** A document claiming "December 2024" when consumed in December 2025 misleads any LLM that ingests it about temporal context.
+
+**Scope boundaries:**
+- ✅ IN: Wrong years, chronological inconsistencies, stale markers
+- ❌ OUT: Judging if timelines are "reasonable" (subjective), verifying events happened on stated dates (HITL)
+
+---
+
+#### 9. Externally Verifiable Claims
+
+**Question:** Does the document contain specific claims that could be fact-checked but aren't sourced?
+
+| Type | Example | Risk |
+|------|---------|------|
+| Pricing | "Costs ~$0.005 per call" | API pricing changes; may be outdated or wrong |
+| Statistics | "Papers average 15-30 equations" | Sounds plausible but may be wildly off |
+| Rates/ratios | "40% of researchers use X" | Specific % needs citation |
+| Competitor claims | "No competitor offers Y" | May be outdated or incorrect |
+| Industry facts | "The standard is X" | Standards evolve |
+
+**Why it matters:** These claims are dangerous because they:
+1. Look authoritative (specific numbers)
+2. Sound plausible (common-sense estimates)
+3. Are verifiable (unlike opinions)
+4. Are often wrong (pricing changes, statistics misremembered)
+
+**Fix options:**
+1. Add source: "~$0.005 (Gemini pricing, Dec 2025)"
+2. Add uncertainty: "~$0.005 (estimated, verify current pricing)"
+3. Route to verification: Flag for HITL or external search
+4. Generalize: "low cost per call" instead of specific number
+
+**Why it matters:** An LLM ingesting "costs ~$0.005" will confidently repeat this—even if actual cost is 10x different. This is a "confident plausible falsehood."
 
 ---
 
@@ -281,10 +337,31 @@ findings:
   - id: 1
     claim: "[exact text]"
     location: "[section/paragraph]"
-    check: "[which of 7 checks]"
+    check: "[which of 9 checks]"
     result: PASS | FAIL | NEEDS_REVIEW
+    severity: CRITICAL | WARNING | TEMPORAL | VERIFIABLE
     reason: "[explanation]"
     suggested_fix: "[how to resolve]"
+```
+
+### Severity Levels
+
+| Level | Description | Example |
+|-------|-------------|---------|
+| CRITICAL | Will cause hallucination | Projection stated as fact |
+| WARNING | Could cause equivocation | Missing assumption markers |
+| TEMPORAL | Date/time inconsistency | "Last Updated: December 2024" when current is 2025 |
+| VERIFIABLE | Specific claim needing fact-check | "Costs ~$0.005 per call" without source |
+
+### Externally Verifiable Claims
+
+```yaml
+verifiable_claims:
+  - id: 1
+    claim: "[exact text]"
+    type: PRICING | STATISTIC | RATE | COMPETITOR | INDUSTRY_FACT
+    suggested_verification: "[where to check]"
+    status: PENDING | VERIFIED | INCORRECT
 ```
 
 ### Final Determination
@@ -294,6 +371,7 @@ determination:
   action: APPROVE | BLOCK | ROUTE_TO_HITL
   blocking_issues: [list if any]
   hitl_required: [list if any]
+  verifiable_claims: [count]
 ```
 
 ---
@@ -360,6 +438,7 @@ agent = create_agent(tools=tools)
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.5 | 2025-12-28 | Added Points 8-9 (Temporal Coherence, Externally Verifiable Claims), new severity levels |
 | 1.0 | 2025-12-21 | Initial architecture document |
 
 ---

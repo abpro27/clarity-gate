@@ -1,4 +1,6 @@
-# Clarity Gate v1.4
+# Clarity Gate v1.5
+
+> **⚠️ NEW RELEASE:** Version 1.5 released (2025-12-28). Download the new [`clarity-gate.zip`](clarity-gate.zip) for the 9-point verification system including Temporal Coherence and Externally Verifiable Claims detection.
 
 **Open-source pre-ingestion verification for epistemic quality in RAG systems.**
 
@@ -77,9 +79,9 @@ Add [`SKILL.md`](SKILL.md) to project knowledge. Claude will search it when need
 
 ### Option 4: Manual / Other LLMs
 
-Use the [7-point verification](docs/ARCHITECTURE.md#the-7-verification-points) as a manual review process.
+Use the [9-point verification](docs/ARCHITECTURE.md#the-9-verification-points) as a manual review process.
 
-For Cursor, Windsurf, or other AI tools, extract the 7 verification points into your `.cursorrules`. The methodology is tool-agnostic—only SKILL.md is Claude-optimized.
+For Cursor, Windsurf, or other AI tools, extract the 9 verification points into your `.cursorrules`. The methodology is tool-agnostic—only SKILL.md is Claude-optimized.
 
 ---
 
@@ -101,7 +103,7 @@ The annotated output is a **Clarity-Gated Document (CGD)**—research shows mid-
 
 ---
 
-## The 7 Verification Points
+## The 9 Verification Points
 
 ### Epistemic Checks (Core Focus)
 
@@ -115,6 +117,11 @@ The annotated output is a **Clarity-Gated Document (CGD)**—research shows mid-
 5. **Data Consistency** — Conflicting numbers within document
 6. **Implicit Causation** — Claims implying causation without evidence
 7. **Future State as Present** — Planned outcomes described as achieved
+
+### Verification Routing (New in v1.5)
+
+8. **Temporal Coherence** — Dates consistent with each other and with present
+9. **Externally Verifiable Claims** — Pricing, statistics, competitor claims flagged for verification
 
 See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for full details and examples.
 
@@ -175,6 +182,8 @@ Layer 0: AI Execution
 
 A perfectly aligned model (Layer 3) can confidently produce unsafe outputs from unsafe context (Layer 2). Alignment doesn't inoculate against misleading information.
 
+v1.5 adds temporal coherence and externally verifiable claims detection — addressing "confident plausible falsehoods" that have correct form but incorrect facts.
+
 ---
 
 ## Prior Art
@@ -218,7 +227,7 @@ See [ROADMAP.md](docs/ROADMAP.md) for details and timeline.
 
 | Document | Description |
 |----------|-------------|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Full 7-point system, verification hierarchy, output format |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Full 9-point system, verification hierarchy, output format |
 | [PRIOR_ART.md](docs/PRIOR_ART.md) | Landscape of existing systems |
 | [ROADMAP.md](docs/ROADMAP.md) | Phase 1/2/3 development plan |
 | [SKILL.md](SKILL.md) | Claude skill implementation |
@@ -260,7 +269,7 @@ Looking for:
 
 1. **Prior art** — Open-source pre-ingestion gates for epistemic quality I missed?
 2. **Integration** — LlamaIndex, LangChain implementations
-3. **Verification feedback** — Are the 7 points the right focus?
+3. **Verification feedback** — Are the 9 points the right focus?
 4. **Real-world examples** — Documents that expose edge cases
 
 Open an issue or PR.

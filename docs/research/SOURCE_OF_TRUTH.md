@@ -4,10 +4,10 @@
 >
 > This document follows the six failure mode mitigations prescribed by the Source of Truth Creator skill.
 
-**Last Updated:** 2025-12-21  
-**Owner:** Francesco Marinoni Moretto  
-**Status:** VERIFIED (see Verification Status below)  
-**Version:** 2.0
+**Last Updated:** 2025-12-28
+**Owner:** Francesco Marinoni Moretto
+**Status:** VERIFIED (see Verification Status below)
+**Version:** 2.1
 
 ---
 
@@ -66,9 +66,12 @@ Consolidated research, prior art analysis, and strategic positioning for Clarity
 
 | Claim | Value | Methodology | Confidence | Verified |
 |-------|-------|-------------|------------|----------|
-| SKILL.md current version | v1.3 | File inspection | High | 2025-12-21 |
-| Previous SKILL.md version | v1.2 | Changelog review | High | 2025-12-21 |
-| Number of verification points | 7 (4 epistemic + 3 data quality) | Document review | High | 2025-12-21 |
+| SKILL.md current version | v1.5 | File inspection | High | 2025-12-28 |
+| Previous SKILL.md version | v1.4 | Changelog review | High | 2025-12-28 |
+| Number of verification points | 9 (4 epistemic + 3 data quality + 2 verification routing) | Document review | High | 2025-12-28 |
+| Temporal Coherence point created | 2025-12-28 | v1.5 development | High | 2025-12-28 |
+| Externally Verifiable Claims point created | 2025-12-28 | v1.5 development | High | 2025-12-28 |
+| v1.5 motivation (production failures) | Documented | Real-world testing | High | 2025-12-28 |
 | Tier 1A/1B distinction created | 2025-12-21 | This research process | High | 2025-12-21 |
 | Intelligent routing concept created | 2025-12-21 | This research process | High | 2025-12-21 |
 
@@ -118,7 +121,10 @@ Consolidated research, prior art analysis, and strategic positioning for Clarity
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| 7-point verification system | Completed | 4 epistemic + 3 data quality |
+| 9-point verification system | Completed | 4 epistemic + 3 data quality + 2 verification routing |
+| Temporal Coherence (Point 8) | Completed | Date validation, chronology |
+| Externally Verifiable Claims (Point 9) | Completed | Pricing, statistics flagging |
+| SKILL.md v1.5 | Completed | All v1.5 updates integrated |
 | Tier 1A: Internal consistency | Completed | Ready for use |
 | Tier 1B: External verification interface | Planned | Design phase, not implemented |
 | Tier 2: HITL intelligent routing | Completed | Protocol defined |
@@ -126,7 +132,6 @@ Consolidated research, prior art analysis, and strategic positioning for Clarity
 | HITL failure case study | Completed | Documented in SKILL.md |
 | LessWrong post | Completed | v6.3 final |
 | Elevated README | Completed | Strategic positioning |
-| SKILL.md v1.3 | Completed | All updates integrated |
 | GitHub repository update | Completed | Files replaced, pending push |
 | Phase 2 external hooks | Planned | Architecture defined, not implemented |
 | Phase 3 confidence scoring | Planned | Concept only |
@@ -280,6 +285,13 @@ Claims that appear in publications but require epistemic markers:
 
 ## Changelog
 
+### v2.1 (2025-12-28)
+- Updated for Clarity Gate v1.5
+- Changed verification points from 7 to 9
+- Added Points 8 (Temporal Coherence) and 9 (Externally Verifiable Claims)
+- Updated SKILL.md version references
+- Added v1.5 motivation documentation
+
 ### v2.0 (2025-12-21)
 - Restructured to follow Source of Truth Creator v1.0 skill prescriptions
 - Added Verification Status box with staleness tracking
@@ -302,13 +314,13 @@ Claims that appear in publications but require epistemic markers:
 | Field | Value |
 |-------|-------|
 | Document Type | Source of Truth |
-| Version | 2.0 |
+| Version | 2.1 |
 | Created | 2025-12-21 |
-| Last Updated | 2025-12-21 |
+| Last Updated | 2025-12-28 |
 | Owner | Francesco Marinoni Moretto |
 | Status | VERIFIED (with noted exceptions) |
 | Repository | github.com/frmoretto/clarity-gate |
 | Related | github.com/frmoretto/stream-coding |
 | License | CC BY 4.0 |
 | Created Using | Source of Truth Creator v1.0 |
-| Verified Using | Clarity Gate v1.3 |
+| Verified Using | Clarity Gate v1.5 |
