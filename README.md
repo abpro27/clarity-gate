@@ -1,6 +1,6 @@
-# Clarity Gate v1.5
+# Clarity Gate v1.6
 
-> **⚠️ NEW RELEASE:** Version 1.5 released (2025-12-28). Download the new [`clarity-gate.zip`](clarity-gate.zip) for the 9-point verification system including Temporal Coherence and Externally Verifiable Claims detection.
+> **⚠️ NEW RELEASE:** Version 1.6 released (2025-12-31). Download the new [`clarity-gate.zip`](clarity-gate.zip) for Two-Round HITL verification — separating quick confirmation from real verification.
 
 **Open-source pre-ingestion verification for epistemic quality in RAG systems.**
 
@@ -90,7 +90,7 @@ For Cursor, Windsurf, or other AI tools, extract the 9 verification points into 
 **Verify Mode (default):**
 ```
 "Run clarity gate on this document"
-→ Issues report + HITL verification table
+→ Issues report + Two-Round HITL verification
 ```
 
 **Annotate Mode:**
@@ -118,12 +118,55 @@ The annotated output is a **Clarity-Gated Document (CGD)**—research shows mid-
 6. **Implicit Causation** — Claims implying causation without evidence
 7. **Future State as Present** — Planned outcomes described as achieved
 
-### Verification Routing (New in v1.5)
+### Verification Routing (v1.5+)
 
 8. **Temporal Coherence** — Dates consistent with each other and with present
 9. **Externally Verifiable Claims** — Pricing, statistics, competitor claims flagged for verification
 
 See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for full details and examples.
+
+---
+
+## Two-Round HITL Verification (New in v1.6)
+
+Different claims need different types of verification:
+
+| Claim Type | What Human Checks | Cognitive Load |
+|------------|-------------------|----------------|
+| LLM found source, human witnessed | "Did I interpret correctly?" | Low (quick scan) |
+| Human's own data | "Is this actually true?" | High (real verification) |
+| No source found | "Is this actually true?" | High (real verification) |
+
+**v1.6 separates these into two rounds:**
+
+### Round A: Derived Data Confirmation
+
+Quick scan of claims from sources found in the current session:
+
+```
+## Derived Data Confirmation
+
+These claims came from sources found in this session:
+
+- o3 prices cut 80% June 2025 (OpenAI blog)
+- Opus 4.5 is $5/$25 (Anthropic pricing page)
+
+Reply "confirmed" or flag any I misread.
+```
+
+### Round B: True HITL Verification
+
+Full verification of claims needing actual checking:
+
+```
+## HITL Verification Required
+
+| # | Claim | Why HITL Needed | Human Confirms |
+|---|-------|-----------------|----------------|
+| 1 | Benchmark scores (100%, 75%→100%) | Your experiment data | [ ] True / [ ] False |
+```
+
+**Result:** Human attention focused on claims that actually need it.
 
 ---
 
@@ -136,14 +179,14 @@ Claim Extracted --> Source of Truth Exists?
            YES                             NO
            |                               |
      Tier 1: Automated              Tier 2: HITL
-     Verification                   (Intelligent Routing)
+     Verification                   Two-Round Verification
            |                               |
-     +-----+-----+                   Human reviews:
-     |           |                   - Add markers
-   Tier 1A    Tier 1B               - Provide source
-   Internal   External              - Reject claim
+     +-----+-----+                   Round A → Round B
      |           |                         |
-   PASS/BLOCK  PASS/BLOCK           APPROVE/REJECT
+   Tier 1A    Tier 1B               APPROVE/REJECT
+   Internal   External
+     |           |
+   PASS/BLOCK  PASS/BLOCK
 ```
 
 ### Tier 1A: Internal Consistency (Ready Now)
@@ -162,11 +205,11 @@ See [biology paper example](examples/biology-paper-example.md) for a real case w
 
 For claims verifiable against structured sources. **Users provide connectors.**
 
-### Tier 2: HITL Fallback (Intelligent Routing)
+### Tier 2: Two-Round HITL (Intelligent Routing)
 
-The system detects *which* specific documents need human review, sparing humans from reviewing safe ones.
+The system detects *which* specific claims need human review AND *what kind of review* each needs.
 
-*Example: A 50-claim document might have 48 pass automated checks. The system routes only 2 for human review, reducing manual effort by ~96%. (Illustrative example, not measured.)*
+*Example: A 50-claim document might have 48 pass automated checks, with the remaining 2 split between Round A (quick confirmation) and Round B (real verification). (Illustrative example, not measured.)*
 
 ---
 
@@ -181,8 +224,6 @@ Layer 0: AI Execution
 ```
 
 A perfectly aligned model (Layer 3) can confidently produce unsafe outputs from unsafe context (Layer 2). Alignment doesn't inoculate against misleading information.
-
-v1.5 adds temporal coherence and externally verifiable claims detection — addressing "confident plausible falsehoods" that have correct form but incorrect facts.
 
 ---
 
@@ -207,7 +248,7 @@ This system checks whether claims are properly marked as uncertain — it cannot
 
 **Risk:** An LLM can hallucinate facts INTO a document, then "pass" Clarity Gate by adding source markers to false claims.
 
-**Mitigation:** HITL fact verification is **mandatory** before declaring PASS. See [SKILL.md](SKILL.md) for the full HITL protocol.
+**Mitigation:** Two-Round HITL verification is **mandatory** before declaring PASS. See [SKILL.md](SKILL.md) for the full protocol.
 
 ---
 
@@ -215,7 +256,7 @@ This system checks whether claims are properly marked as uncertain — it cannot
 
 | Phase | Status | Description |
 |-------|--------|-------------|
-| **Phase 1** | ✅ Ready | Internal consistency checks + annotation (Claude skill) |
+| **Phase 1** | ✅ Ready | Internal consistency checks + Two-Round HITL + annotation (Claude skill) |
 | **Phase 2** | 🔜 Planned | External verification hooks (user connectors) |
 | **Phase 3** | 🔜 Planned | Confidence scoring for HITL optimization |
 

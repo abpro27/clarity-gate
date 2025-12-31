@@ -3,7 +3,7 @@ name: clarity-gate
 description: Pre-ingestion verification for epistemic quality in RAG systems. Use when reviewing documents before they enter knowledge bases, checking if claims could be misinterpreted as facts, or validating that hypotheses are clearly marked. Triggers on "clarity gate", "check for hallucination risks", "can an LLM read this safely", "review for equivocation", "verify document clarity", "pre-ingestion check".
 ---
 
-# Clarity Gate v1.5
+# Clarity Gate v1.6
 
 **Purpose:** Pre-ingestion verification system that enforces epistemic quality before documents enter RAG knowledge bases.
 
@@ -229,9 +229,9 @@ Claim Extracted --> Does Source of Truth Exist?
            YES                             NO
            |                               |
    Tier 1: Automated              Tier 2: HITL
-   Consistency & Verification     Intelligent Routing
+   Consistency & Verification     Two-Round Verification
            |                               |
-   PASS / BLOCK                   APPROVE / REJECT
+   PASS / BLOCK                   Round A → Round B → APPROVE / REJECT
 ```
 
 ### Tier 1: Automated Consistency & Verification
@@ -263,11 +263,19 @@ For claims that *can* be verified against structured sources:
 
 ---
 
-### Tier 2: HITL Fallback (Intelligent Routing) -- MANDATORY
+### Tier 2: Two-Round HITL Verification -- MANDATORY
 
-The value isn't having humans review data--every team does that. The value is **intelligent routing**: the system detects *which* specific claims need human review, sparing humans from reviewing safe ones.
+The value isn't having humans review data--every team does that. The value is **intelligent routing**: the system detects *which* specific claims need human review, and *what kind of review* each needs.
 
-*Example: A 50-claim document might have 48 pass automated checks. The system routes only 2 for human review, reducing manual effort by ~96%.*
+**Why two rounds?** Different claims need different types of verification:
+
+| Claim Type | What Human Checks | Cognitive Load |
+|------------|-------------------|----------------|
+| LLM found source, human witnessed | "Did I interpret correctly?" | Low (quick scan) |
+| Human's own data | "Is this actually true?" | High (real verification) |
+| No source found | "Is this actually true?" | High (real verification) |
+
+Mixing these in one table creates checkbox fatigue—human rubber-stamps everything instead of focusing attention where it matters.
 
 ---
 
@@ -279,113 +287,142 @@ Before extracting claims, ask:
 > (e.g., project state record, verified metrics, status tracker)
 >
 > If yes, please share it -- I'll use it to verify claims.
-> If no, I'll present claims for manual verification."
+> If no, I'll present claims for two-round verification."
 
 ---
 
-**Why HITL exists:** Points 1-7 verify that claims are MARKED correctly. They cannot verify if claims are TRUE. An LLM may confidently write false information derived from:
-- Misremembered conversations
-- Incorrect pattern-matching from context
-- Confusing proposals/plans with completed work
-- Assuming demo = deployment, or planned = achieved
+## Two-Round HITL Classification
 
-**Process:**
-
-1. **Extract claims** - List every significant factual assertion:
-   - Metrics (users, revenue, percentages)
-   - Events (deployments, launches, partnerships)
-   - Outcomes (results, achievements, validations)
-   - Comparisons (X is better than Y, X achieved Z)
-
-2. **Present to human** in this format:
-   ```
-   ## HITL Verification Required
-   
-   Before I can declare PASS, please confirm these claims are TRUE:
-   
-   | # | Claim | Source in Doc | Human Confirms |
-   |---|-------|---------------|----------------|
-   | 1 | [specific claim] | [section/line] | [ ] True / [ ] False |
-   | 2 | [specific claim] | [section/line] | [ ] True / [ ] False |
-   | 3 | [specific claim] | [section/line] | [ ] True / [ ] False |
-   
-   Please respond with corrections for any false claims.
-   ```
-
-3. **Wait for human response** - Do NOT proceed until human confirms
-
-4. **Apply corrections** - Fix any claims the human identifies as false
-
-**Red flags that REQUIRE HITL:**
-- Case studies or customer examples
-- Deployment/production claims
-- User counts or adoption metrics
-- Revenue or cost figures
-- "Zero defects" or "100%" claims
-- Partnership or client names
-- Before/after comparisons
-
-**The human's job is specific:**
-1. Provide the Source of Truth that was missed, OR
-2. Add appropriate epistemic markers ([PROJECTION], [HYPOTHESIS], [UNVERIFIED]), OR
-3. Reject the claim entirely
-
-This creates an **audit trail**: Document X, Claim Y, verified against Source Z on Date W by Person P.
-
----
-
-**Source of Truth Template (Adaptable)**
-
-If the human doesn't have a Source of Truth, suggest creating one:
+How to assign claims to Round A or Round B:
 
 ```
-# [Subject] - Source of Truth
-Last Updated: [date]
-Owner: [name/team]
-Status: [current state]
-
-## Verified Data
-| Item | Value | Context | Verified Date |
-|------|-------|---------|---------------|
-| [what] | [measured value] | [conditions, source, method] | [when] |
-
-## Status Tracker
-| Item | Status | Notes |
-|------|--------|-------|
-| [what] | [None / Planned / In Progress / Completed / N/A] | [details] |
-
-## Stakeholders / Relationships
-| Entity | Relationship | Status |
-|--------|--------------|--------|
-| [who] | [type] | [current state] |
-
-## Sources
-| Claim | Source Type | Reference |
-|-------|-------------|-----------|
-| [claim] | Internal | [internal doc] |
-| [claim] | External | [citation] |
-| [claim] | None | Unverified |
-
-## Open Items
-| ID | Priority | Description | Status |
-|----|----------|-------------|--------|
+Claim Extracted
+      │
+      ▼
+Was source found in THIS session?
+      │
+      ├─── YES ────► Was human present/active?
+      │                    │
+      │              ├─ YES ──► ROUND A (Derived)
+      │              │
+      │              └─ NO/UNCLEAR ──► ROUND B (True HITL)
+      │
+      └─── NO ─────► Is this human's own data?
+                           │
+                     ├─ YES ──► ROUND B with note "your data"
+                     │
+                     └─ NO ──► ROUND B with note "no source found"
 ```
 
-**Key principles:**
-- Explicit status markers: None, Planned, In Progress, Completed, Verified, N/A
-- Context for every value: How/where/when was it measured?
-- Date everything
-- Separate Internal from External sources
+### Classification Rules
+
+| Condition | Round | Rationale |
+|-----------|-------|-----------|
+| Source found in session, human active | **A** | Human witnessed, just confirm interpretation |
+| Source found in session, human unclear | **B** | Can't assume human saw it |
+| Human's own data (experiments, metrics) | **B** | Only human can confirm their data |
+| No source found | **B** | High hallucination risk |
+| Conflicting sources | **B** | Needs human judgment |
+| Extrapolation/inference | **B** | LLM reasoning, not fact |
+| Cross-session claim | **B** | Context may be lost |
+
+**Default behavior:** When uncertain, assign to Round B.
 
 ---
 
-**Source Types:**
+## Round A: Derived Data Confirmation
 
-| Type | Definition | Example |
-|------|------------|---------|
-| **Internal** | Verified state of this project/context | Metrics, status records, team data |
-| **External** | Published research, third-party data | Academic papers, industry reports, official statistics |
-| **None** | Claim without supporting source | Requires HITL verification |
+Claims where LLM found a source AND human was present in the session.
+
+**Purpose:** Confirm interpretation, not truth. Human already saw the source.
+
+**Format:** Simple list (no table needed—lower visual weight for quick scan)
+
+```
+## Derived Data Confirmation
+
+These claims came from sources found in this session:
+
+- o3 prices cut 80% June 2025 (OpenAI blog)
+- Opus 4.5 is $5/$25 (Anthropic pricing page)
+- Google free tier cut Dec 7 (GCP changelog)
+
+Reply "confirmed" or flag any I misread.
+```
+
+**Human action:** Quick scan, reply "confirmed" or flag extraction errors.
+
+---
+
+## Round B: True HITL Verification
+
+Claims where:
+- No source was found
+- Source is human's own data/experiment
+- LLM is extrapolating or inferring
+- Conflicting sources found
+- Session context unclear
+
+**Purpose:** Verify truth. Human may NOT have seen this or it may not exist.
+
+**Format:** Full table with True/False confirmation
+
+```
+## HITL Verification Required
+
+These claims need your verification:
+
+| # | Claim | Why HITL Needed | Human Confirms |
+|---|-------|-----------------|----------------|
+| 1 | Benchmark scores (Haiku 100%, Flash 75%→100%) | Your experiment data | [ ] True / [ ] False |
+| 2 | 500 employees deployed | No source found | [ ] True / [ ] False |
+
+Please respond with confirmation or corrections.
+```
+
+**Human action:** Actually verify each claim.
+
+---
+
+## Edge Cases
+
+### 1. Long conversation - did human see the search?
+
+**Problem:** In a 2-hour session, human may have stepped away when a search happened.
+
+**Solution:** If uncertain, default to Round B. Add note: "Source found earlier in session - please confirm you saw this."
+
+### 2. Human uploaded a document - is that "their data"?
+
+**Problem:** Human uploads a PDF. LLM extracts claims. Are these "derived" or "HITL"?
+
+**Solution:** 
+- If LLM is extracting what PDF says → Round A (confirm interpretation)
+- If LLM is claiming PDF content is TRUE → Round B (human must verify the source)
+
+### 3. Mixed provenance
+
+**Problem:** Claim combines searched data + inference.
+
+**Example:** "At current prices ($0.15/1M), this would cost ~$450/month"
+- Price: searched (Round A)
+- Monthly cost: calculated (could be wrong)
+
+**Solution:** Split into components or assign to higher round (B).
+
+### 4. No claims need Round B
+
+**Problem:** All claims are derived from sources in session.
+
+**Solution:** Skip Round B section entirely. Output:
+
+```
+## HITL Verification Required
+
+No claims require full HITL verification - all claims derived from sources found in this session.
+
+Please confirm Derived Data above, then PASS can be declared.
+```
 
 ---
 
@@ -403,9 +440,9 @@ Run through document looking for these patterns:
 | Time/cost savings claims | Mark as projected unless measured |
 | "The model recognizes/understands/knows" | Mark as hypothesis about LLM behavior |
 | "Always", "never", "guarantees" | Check if absolute claim is warranted |
-| **Case studies / customer names** | **HITL REQUIRED - verify with human** |
-| **Production deployments** | **HITL REQUIRED - verify with human** |
-| **Measured outcomes** | **HITL REQUIRED - verify with human** |
+| **Case studies / customer names** | **Round B - verify with human** |
+| **Production deployments** | **Round B - verify with human** |
+| **Measured outcomes** | **Round B - verify with human** |
 | "Last Updated: [date]" | Check against current date (Point 8) |
 | Version numbers with dates | Verify chronological order (Point 8) |
 | "Current", "now", "today", "as of" | Flag for staleness check (Point 8) |
@@ -446,44 +483,44 @@ After running Clarity Gate, report:
 | # | Claim | Type | Suggested Verification |
 |---|-------|------|------------------------|
 | 1 | [specific claim] | Pricing / Statistic / Competitor | [where to verify] |
-| 2 | [specific claim] | Pricing / Statistic / Competitor | [where to verify] |
 
 **Verification status:** ⬜ Pending / ✅ Verified / ❌ Incorrect
 
 ---
 
+## Derived Data Confirmation
+
+These claims came from sources found in this session:
+
+- [claim] ([source])
+- [claim] ([source])
+
+Reply "confirmed" or flag any I misread.
+
+---
+
 ## HITL Verification Required
 
-Before declaring PASS, please confirm these claims are TRUE:
+These claims need your verification:
 
-| # | Claim | Source in Doc | Human Confirms |
-|---|-------|---------------|----------------|
-| 1 | [claim] | [location] | [ ] True / [ ] False |
-| 2 | [claim] | [location] | [ ] True / [ ] False |
-
-**Additional HITL categories (v1.5):**
-- Pricing / cost claims — API costs change; verify against current docs
-- Statistical generalizations — "X averages Y" claims need citation
-- Competitor capability claims — May be outdated or incorrect
-- Time-sensitive facts — "Current X is Y" may have changed
-
-**Verification options:**
-1. Human confirmation (traditional HITL)
-2. External search (Perplexity, web search)
-3. Source documentation (official pricing pages, studies)
+| # | Claim | Why HITL Needed | Human Confirms |
+|---|-------|-----------------|----------------|
+| 1 | [claim] | [reason] | [ ] True / [ ] False |
 
 ---
 
 **Would you like me to produce an annotated version of this document with the fixes applied?**
 
-(An annotated document improves how mid-tier LLMs handle the content.)
-
 ---
 
-**Verdict:** PENDING HITL CONFIRMATION
+**Verdict:** PENDING CONFIRMATION
 ```
 
-**Only after human confirms can you update to:**
+**Confirmation flow:**
+
+1. Human confirms Round A: "confirmed" (or flags issues)
+2. Human confirms Round B: "1 true, 2 false" (or provides corrections)
+3. Only after both rounds confirmed:
 
 ```
 **Verdict:** PASS (HITL confirmed [date])
@@ -509,7 +546,8 @@ This creates a **Clarity-Gated Document (CGD)** ready for RAG ingestion or hando
 | **WARNING** | LLM might misinterpret | Should fix |
 | **TEMPORAL** | Date/time inconsistency detected | Verify and update |
 | **VERIFIABLE** | Specific claim that could be fact-checked | Route to HITL or external search |
-| **HITL REQUIRED** | Factual claim needs human verification | Cannot pass without confirmation |
+| **ROUND A** | Derived from witnessed source | Quick confirmation |
+| **ROUND B** | Requires true verification | Cannot pass without confirmation |
 | **PASS** | Clearly marked, no ambiguity, verified | No action needed |
 
 ---
@@ -526,7 +564,7 @@ This creates a **Clarity-Gated Document (CGD)** ready for RAG ingestion or hando
 1. (Points 1-4) Epistemic quality: Are claims properly qualified?
 2. (Points 5-7) Data quality: Is the document internally consistent?
 3. (Points 8-9) Verification routing: Are temporal and verifiable claims flagged?
-4. (HITL) Truth verification: Has a human confirmed factual claims?
+4. (Two-Round HITL) Truth verification: Has a human confirmed factual claims?
 
 ---
 
@@ -572,21 +610,60 @@ This creates a **Clarity-Gated Document (CGD)** ready for RAG ingestion or hando
 - Adding "(client-reported)" made a FALSE claim look MORE credible
 - Clarity Gate verified the FORM but not the TRUTH
 
-**What HITL would have caught:**
+**What Two-Round HITL would have caught:**
 
 ```
 ## HITL Verification Required
 
-| # | Claim | Source in Doc | Human Confirms |
-|---|-------|---------------|----------------|
-| 1 | Deployed to 500+ employees | Case Study | [ ] True / [ ] False |
-| 2 | Zero PII leaks in 6 months production | Case Study | [ ] True / [ ] False |
-| 3 | 80% adoption rate achieved | Metrics | [ ] True / [ ] False |
+| # | Claim | Why HITL Needed | Human Confirms |
+|---|-------|-----------------|----------------|
+| 1 | Deployed to 500+ employees | No source found | [ ] True / [ ] False |
+| 2 | Zero PII leaks in 6 months production | No source found | [ ] True / [ ] False |
+| 3 | 80% adoption rate achieved | Your data | [ ] True / [ ] False |
 
-Human response: "FALSE - Client only saw a demo. None of this happened."
+Human response: "All FALSE - Client only saw a demo. None of this happened."
 ```
 
-**Lesson:** Without HITL, Clarity Gate can make false claims WORSE by adding authoritative-looking source markers.
+**Lesson:** Without HITL, Clarity Gate can make false claims WORSE by adding authoritative-looking source markers. Two-round HITL ensures human attention is focused on claims that actually need verification.
+
+---
+
+## Source of Truth Template (Adaptable)
+
+If the human doesn't have a Source of Truth, suggest creating one:
+
+```
+# [Subject] - Source of Truth
+Last Updated: [date]
+Owner: [name/team]
+Status: [current state]
+
+## Verified Data
+| Item | Value | Context | Verified Date |
+|------|-------|---------|---------------|
+| [what] | [measured value] | [conditions, source, method] | [when] |
+
+## Status Tracker
+| Item | Status | Notes |
+|------|--------|-------|
+| [what] | [None / Planned / In Progress / Completed / N/A] | [details] |
+
+## Stakeholders / Relationships
+| Entity | Relationship | Status |
+|--------|--------------|--------|
+| [who] | [type] | [current state] |
+
+## Sources
+| Claim | Source Type | Reference |
+|-------|-------------|-----------|
+| [claim] | Internal | [internal doc] |
+| [claim] | External | [citation] |
+| [claim] | None | Unverified |
+
+## Open Items
+| ID | Priority | Description | Status |
+|----|----------|-------------|--------|
+```
 
 ---
 
@@ -599,6 +676,18 @@ Human response: "FALSE - Client only saw a demo. None of this happened."
 ---
 
 ## Changelog
+
+### v1.6 (2025-12-31)
+- **ADDED:** Two-Round HITL verification system
+  - Round A: Derived Data Confirmation (claims from sources found in session)
+  - Round B: True HITL Verification (claims needing actual verification)
+- **ADDED:** Classification logic for round assignment
+- **ADDED:** Edge cases documentation (long conversations, uploaded docs, mixed provenance)
+- **UPDATED:** Output format to show both rounds
+- **UPDATED:** Severity levels to include ROUND A and ROUND B
+- **CHANGED:** Round A uses simple list format (lighter weight for quick scan)
+- **CHANGED:** Round B uses full table format (structure aids real verification)
+- **RATIONALE:** Reduces cognitive load by matching verification type to claim provenance. Human knows *what kind of thinking* is needed at each step. Focuses real attention on claims that actually need it.
 
 ### v1.5 (2025-12-28)
 - **ADDED:** Point 8 - Temporal Coherence check
@@ -649,7 +738,7 @@ Human response: "FALSE - Client only saw a demo. None of this happened."
 
 ---
 
-**Version:** 1.5
+**Version:** 1.6
 **Scope:** Pre-ingestion verification for RAG systems and LLM document handoff
 **Time:** 5-15 minutes (verification) + HITL response time (varies)
-**Output:** List of issues + fixes + externally verifiable claims table + HITL confirmation + optional annotated document (CGD), then PASS verdict
+**Output:** List of issues + fixes + externally verifiable claims table + two-round HITL confirmation + optional annotated document (CGD), then PASS verdict
