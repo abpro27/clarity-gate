@@ -1,7 +1,7 @@
 # Clarity Gate Roadmap
 
-**Version:** 1.1
-**Last Updated:** 2025-12-28
+**Version:** 1.2
+**Last Updated:** 2025-12-31
 
 ---
 
@@ -32,6 +32,7 @@ Clarity Gate development follows a phased approach, starting with the highest-va
 | 9-point verification checklist | ✅ Ready | 4 epistemic + 3 data quality + 2 verification routing checks |
 | Temporal coherence detection | ✅ Ready (v1.5) | Date validation, chronology checks |
 | Externally verifiable claims | ✅ Ready (v1.5) | Pricing, statistics, competitor claim flagging |
+| Two-Round HITL verification | ✅ Ready (v1.6) | Round A (derived data) + Round B (true verification) |
 | Claude skill implementation | ✅ Ready | SKILL.md for Claude Desktop/Code |
 | Internal consistency detection | ✅ Ready | Figure vs. text, abstract vs. body |
 | HITL protocol | ✅ Ready | Intelligent routing to human review |
@@ -285,5 +286,6 @@ clarity_gate_tool = Tool(
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2 | 2025-12-31 | Updated for v1.6 (Two-Round HITL) |
 | 1.1 | 2025-12-28 | Updated for v1.5 (9-point system) |
 | 1.0 | 2025-12-21 | Initial roadmap |

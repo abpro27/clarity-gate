@@ -1,7 +1,7 @@
 # Clarity Gate Architecture
 
-**Version:** 1.5
-**Last Updated:** 2025-12-28
+**Version:** 1.6
+**Last Updated:** 2025-12-31
 
 ---
 
@@ -273,7 +273,7 @@ External verification requires bespoke integration for each data source. This is
 
 ---
 
-## Tier 2: HITL Fallback (Intelligent Routing)
+## Tier 2: Two-Round HITL Verification (v1.6)
 
 When automated verification cannot resolve a claim, it routes to human review.
 
@@ -281,15 +281,89 @@ When automated verification cannot resolve a claim, it routes to human review.
 
 The value isn't having humans review data -- every team does that.
 
-The value is **intelligent routing**: the system detects *which specific claims* need human review, sparing humans from reviewing safe ones.
+The value is **intelligent routing**: the system detects *which specific claims* need human review, AND *what kind of review* each needs.
+
+### Why Two Rounds?
+
+Different claims need different types of verification:
+
+| Claim Type | What Human Checks | Cognitive Load |
+|------------|-------------------|----------------|
+| LLM found source, human witnessed | "Did I interpret correctly?" | Low (quick scan) |
+| Human's own data | "Is this actually true?" | High (real verification) |
+| No source found | "Is this actually true?" | High (real verification) |
+
+Mixing these in one table creates checkbox fatigue—human rubber-stamps everything instead of focusing attention where it matters.
+
+### Round A: Derived Data Confirmation
+
+Claims where LLM found a source AND human was present in the session.
+
+**Purpose:** Confirm interpretation, not truth. Human already saw the source.
+
+**Format:** Simple list (lighter visual weight for quick scan)
+
+```
+## Derived Data Confirmation
+
+These claims came from sources found in this session:
+
+- o3 prices cut 80% June 2025 (OpenAI blog)
+- Opus 4.5 is $5/$25 (Anthropic pricing page)
+
+Reply "confirmed" or flag any I misread.
+```
+
+### Round B: True HITL Verification
+
+Claims where:
+- No source was found
+- Source is human's own data/experiment
+- LLM is extrapolating or inferring
+- Conflicting sources found
+
+**Purpose:** Verify truth. Human may NOT have seen this or it may not exist.
+
+**Format:** Full table with True/False confirmation
+
+```
+## HITL Verification Required
+
+| # | Claim | Why HITL Needed | Human Confirms |
+|---|-------|-----------------|----------------|
+| 1 | Benchmark scores (100%, 75%→100%) | Your experiment data | [ ] True / [ ] False |
+```
+
+### Classification Logic
+
+```
+Claim Extracted
+      │
+      ▼
+Was source found in THIS session?
+      │
+      ├─── YES ────► Was human present/active?
+      │                    │
+      │              ├─ YES ──► ROUND A (Derived)
+      │              │
+      │              └─ NO/UNCLEAR ──► ROUND B (True HITL)
+      │
+      └─── NO ─────► Is this human's own data?
+                           │
+                     ├─ YES ──► ROUND B with note "your data"
+                     │
+                     └─ NO ──► ROUND B with note "no source found"
+```
+
+**Default behavior:** When uncertain, assign to Round B.
 
 ### Efficiency Example
 
-*A 50-claim document might have 48 pass automated checks. The system routes only 2 for human review, reducing manual effort by ~96%. (Illustrative example, not measured.)*
+*A 50-claim document might have 48 pass automated checks, with the remaining 2 split between Round A (quick confirmation) and Round B (real verification). Human attention is focused on claims that actually need it. (Illustrative example, not measured.)*
 
 ### Human Review Options
 
-When a claim is routed to HITL, the human must:
+When a claim is routed to Round B, the human must:
 
 1. **Provide Source of Truth** -- Point to authoritative source that was missed
 2. **Add Epistemic Markers** -- Mark as [PROJECTION], [HYPOTHESIS], [UNVERIFIED]
@@ -301,6 +375,7 @@ When a claim is routed to HITL, the human must:
 claim: "Our system achieves 99.9% uptime"
 automated_result: CANNOT_VERIFY
 reason: No source of truth for uptime metrics
+round: B
 
 human_action_required:
   options:
@@ -438,6 +513,7 @@ agent = create_agent(tools=tools)
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.6 | 2025-12-31 | Added Two-Round HITL verification (Round A: Derived, Round B: True HITL) |
 | 1.5 | 2025-12-28 | Added Points 8-9 (Temporal Coherence, Externally Verifiable Claims), new severity levels |
 | 1.0 | 2025-12-21 | Initial architecture document |
 
